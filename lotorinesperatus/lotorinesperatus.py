@@ -35,6 +35,31 @@ class LotorInesperatus:
     curses.curs_set(True)
     stdscr.keypad(False)
 
+  def curses_refresh(self, infowin, hexwin, stdscr):
+    infowin.box()
+    hexwin.box()
+    infowin.refresh()
+    hexwin.refresh()
+    stdscr.refresh()
+
+  def curses_keymanage(self, curses, stdscr, start, index):
+    stop = False
+    ch = stdscr.getch()
+    if ch == ord('Q') or ch == ord('q'): stop = True
+    elif ch == curses.KEY_DOWN: start += 1
+    elif ch == curses.KEY_UP and start > 0: start -= 1
+    if ch == curses.KEY_MOUSE:
+      if index % 2: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)
+      else: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
+    return start, stop, index
+
+  def curses_progress(self, curses, stdscr, progress, pmax):
+    curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
+    width = 83
+    filled = int(width * progress / pmax)
+    prgstr = '{:03}'.format(progress * 100 // pmax)
+    stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (width - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
+
   def cwin(self, stdscr):
     bindat = self.get_binary()
     self.curses_setup(curses, stdscr)
@@ -44,34 +69,24 @@ class LotorInesperatus:
       stdscr.refresh()
       while True:
         infowin = curses.newwin(10, 12, 14, 3) # hight, width, starty, startx
-        hexwin = curses.newwin(10, 80, 3, 3)
+        hexwin = curses.newwin(10, 90, 3, 3)
         infowin.bkgd(' ', curses.color_pair(1))
         hexwin.bkgd(' ', curses.color_pair(2))
         infowin.border(0)
         hexwin.border(0)
-      
         for i in range(start + 1, start + 9):
           s0 = []
           for j in range(7):
             s0.append('0x{:08x}'.format(int.from_bytes(bindat[((i * 4) - 4) + j])))
-            hexwin.addstr(i - start, 2 + (11 * j), s0[j])
+            hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
+            hexwin.addstr(i - start, 10 + (11 * j), s0[j])
         infowin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
-        infowin.box()
-        hexwin.box()
-        infowin.refresh()
-        hexwin.refresh()
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
-        stdscr.refresh()
-        ch = stdscr.getch()
-        if ch == ord('Q') or ch == ord('q'): break
-        elif ch == curses.KEY_DOWN: start += 1
-        elif ch == curses.KEY_UP and start > 0: start -= 1
-        if ch == curses.KEY_MOUSE:
-          if index % 2: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)
-          else: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
-        stdscr.refresh()
+        self.curses_progress(curses, stdscr, start, self.nr)
+        self.curses_refresh(infowin, hexwin, stdscr)
+        start, stop, index = self.curses_keymanage(curses, stdscr, start, index)
+        if stop: break
         index += 1
-
     except Exception as err: print(f'Got error(s) [{str(err)}]')
     self.curses_teardown(curses, stdscr)
 
