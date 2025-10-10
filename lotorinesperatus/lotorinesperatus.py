@@ -15,12 +15,8 @@ class LotorInesperatus:
   def get_binary(self) -> List:
     return self.chunks
 
-  def rb(self) -> bytes:
-    return LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/test/examples/hello.bin').get_binary()
-
   def cwin(self, stdscr):
     bindat = self.get_binary()
-    #bindat = self.rb()
     curses.noecho()
     curses.cbreak()
     curses.curs_set(False)
@@ -30,15 +26,12 @@ class LotorInesperatus:
     curses.flushinp()
     stdscr.keypad(True)
     try:
+      index, start = 0, 0
       curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
       curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_WHITE)
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
-
-      index, start = 0, 0
-      done = False
-      items = [f'Item {i}' for i in range(1, 101)]
-      while not done:
+      while True: #not done:
         mainWindow1 = curses.newwin(10, 12, 14, 3) # hight, width, starty, startx
         mainWindow2 = curses.newwin(10, 80, 3, 3)
         mainWindow1.bkgd(' ', curses.color_pair(1))
@@ -52,16 +45,14 @@ class LotorInesperatus:
             s0.append('0x{:08x}'.format(int.from_bytes(bindat[((i * 4) - 4) + j])))
             mainWindow2.addstr(i - start, 2 + (11 * j), s0[j])
         mainWindow1.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
-
         mainWindow1.box()
         mainWindow2.box()
         mainWindow1.refresh()
         mainWindow2.refresh()
-
         stdscr.addstr(0, 0, f'Iteration [{str(index)}]')
         stdscr.refresh()
         ch = stdscr.getch()
-        if ch == ord('Q') or ch == ord('q'): done = True
+        if ch == ord('Q') or ch == ord('q'): break #done = True
         elif ch == curses.KEY_DOWN: start += 1
         elif ch == curses.KEY_UP and start > 0: start -= 1
         if ch == curses.KEY_MOUSE:
