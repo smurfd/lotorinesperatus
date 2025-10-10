@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from typing import List
+from typing import List, Tuple
 import curses, os
 
 class LotorInesperatus:
-  def __init__(self, fn):
+  def __init__(self, fn) -> None:
     self.chunks = []
     self.fn = fn
     self.nr = 0
@@ -17,7 +17,7 @@ class LotorInesperatus:
   def get_binary(self) -> List:
     return self.chunks
 
-  def curses_setup(self, curses, stdscr):
+  def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
     curses.cbreak()
     curses.curs_set(False)
@@ -29,20 +29,20 @@ class LotorInesperatus:
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
     curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_WHITE)
 
-  def curses_teardown(self, curses, stdscr):
+  def curses_teardown(self, curses, stdscr) -> None:
     curses.nocbreak()
     curses.echo()
     curses.curs_set(True)
     stdscr.keypad(False)
 
-  def curses_refresh(self, infowin, hexwin, stdscr):
+  def curses_refresh(self, infowin, hexwin, stdscr) -> None:
     infowin.box()
     hexwin.box()
     infowin.refresh()
     hexwin.refresh()
     stdscr.refresh()
 
-  def curses_keymanage(self, curses, stdscr, start, index):
+  def curses_keymanage(self, curses, stdscr, start, index) -> Tuple:
     stop = False
     ch = stdscr.getch()
     if ch == ord('Q') or ch == ord('q'): stop = True
@@ -53,14 +53,14 @@ class LotorInesperatus:
       else: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
     return start, stop, index
 
-  def curses_progress(self, curses, stdscr, progress, pmax):
+  def curses_progress(self, curses, stdscr, progress, pmax) -> None:
     curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
     width = 83
     filled = int(width * progress / pmax)
     prgstr = '{:03}'.format(progress * 100 // pmax)
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (width - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
 
-  def curses_menu(self): # TODO if needed
+  def curses_menu(self) -> None: # TODO if needed
     menu_items = ["Option 1", "Option 2", "Option 3"]
     selected = 0
     while True:
@@ -80,7 +80,7 @@ class LotorInesperatus:
         break
 
 
-  def cwin(self, stdscr):
+  def cwin(self, stdscr) -> None:
     bindat = self.get_binary()
     self.curses_setup(curses, stdscr)
     try:
