@@ -1,10 +1,17 @@
+#!/usr/bin/env python3
+from lotorinesperatus.lotorinesperatus import LotorInesperatus
+from typing import Any
 import curses
 import struct
 import math
 import sys
+import os
+
+def rb() -> bytes:
+  return LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin').get()
 
 def cwin(stdscr):
-  bindat = [struct.pack(">Q", i) for i in range(1000)]
+  bindat = rb()
   curses.noecho()
   curses.cbreak()
   curses.curs_set(False)
@@ -31,15 +38,11 @@ def cwin(stdscr):
       mainWindow2.border(0)
       
       for i in range(start + 1, start + 9):
-        s0 = "0x{:08x}".format(int.from_bytes(bindat[((i * 4) - 4) + 0]))
-        s1 = "0x{:08x}".format(int.from_bytes(bindat[((i * 4) - 4) + 1]))
-        s2 = "0x{:08x}".format(int.from_bytes(bindat[((i * 4) - 4) + 2]))
-        s3 = "0x{:08x}".format(int.from_bytes(bindat[((i * 4) - 4) + 3]))
-        mainWindow2.addstr(i - start,  1, s0)
-        mainWindow2.addstr(i - start, 12, s1)
-        mainWindow2.addstr(i - start, 23, s2)
-        mainWindow2.addstr(i - start, 34, s3)
-      mainWindow1.addstr(1, 1, "0x{:08x}".format(int.from_bytes(bindat[(start * 4)])))
+        s0 = []
+        for j in range(7):
+          s0.append('0x{:08x}'.format(int.from_bytes(bindat[((i * 4) - 4) + j])))
+          mainWindow2.addstr(i - start, 2 + (11 * j), s0[j])
+      mainWindow1.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
 
       mainWindow1.box()
       mainWindow2.box()
