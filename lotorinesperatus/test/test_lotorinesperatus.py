@@ -4,8 +4,7 @@ import curses, os
 
 
 def test_lotorinesperatus() -> None:
-  l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
-  curses.wrapper(l.cwin)
+  curses.wrapper(LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin').cwin)
 
 
 if __name__ == '__main__':

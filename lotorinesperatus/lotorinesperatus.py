@@ -14,7 +14,6 @@ class LotorInesperatus:
         if not chunk: break
         self.chunks.append(chunk)
         self.nr+=1
-
     result = subprocess.run(['objdump', '-d', fn], capture_output=True, text=True)
     self.disasm = result.stdout
 
@@ -22,10 +21,7 @@ class LotorInesperatus:
     return self.chunks
 
   def get_disassembly(self) -> List:
-    s = self.disasm.splitlines()
-    r=[]
-    for s0 in s: r.append(s0)
-    return r #self.disasm.splitlines()
+    return [s for s in self.disasm.splitlines()]
 
   def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
@@ -101,28 +97,29 @@ class LotorInesperatus:
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
       while True:
-        infowin = curses.newwin(10, 12, 14, 3) # hight, width, starty, startx
+        infwin = curses.newwin(10, 12, 14, 3) # hight, width, starty, startx
         hexwin = curses.newwin(10, 90, 3, 3)
         diswin = curses.newwin(30, 77, 14, 16)
-        infowin.bkgd(' ', curses.color_pair(1))
+        infwin.bkgd(' ', curses.color_pair(1))
         hexwin.bkgd(' ', curses.color_pair(2))
         diswin.bkgd(' ', curses.color_pair(2))
-        infowin.border(0)
+        infwin.border(0)
         hexwin.border(0)
         diswin.border(0)
         for i in range(start + 1, start + 9):
-          s0, s1 = [], []
+          s0 = []
           for j in range(7):
             s0.append('0x{:08x}'.format(int.from_bytes(bindat[((i * 4) - 4) + j])))
             hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
             hexwin.addstr(i - start, 10 + (11 * j), s0[j])
-        infowin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
+        infwin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
+        s1 = []
         for i in range(21):
           s1.append(asmdat[i])
           diswin.addstr(i, 1, s1[i])
         self.curses_progress(curses, stdscr, start, self.nr)
-        self.curses_refresh(infowin, hexwin, diswin, stdscr)
+        self.curses_refresh(infwin, hexwin, diswin, stdscr)
         start, stop, index = self.curses_keymanage(curses, stdscr, start, index)
         if stop: break
         index += 1
