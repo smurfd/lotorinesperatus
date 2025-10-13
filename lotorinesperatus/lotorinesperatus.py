@@ -4,8 +4,7 @@ import subprocess, curses, os
 
 class LotorInesperatus:
   def __init__(self, fn) -> None:
-    self.chunks = []
-    self.disasm = []
+    self.chunks, self.disasm = [], []
     self.fn = fn
     self.nr = 0
     with open(self.fn, 'rb') as f:
@@ -13,15 +12,15 @@ class LotorInesperatus:
         chunk = f.read(4)
         if not chunk: break
         self.chunks.append(chunk)
-        self.nr+=1
+        self.nr += 1
     result = subprocess.run(['objdump', '-d', fn], capture_output=True, text=True)
     self.disasm = result.stdout
 
   def get_binary(self) -> List:
     return self.chunks
 
-  def get_disassembly(self) -> List:
-    return [s for s in self.disasm.splitlines()]
+  def get_disassembly(self) -> Tuple:
+    return [s for s in self.disasm.splitlines()], len(self.disasm.splitlines())
 
   def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
@@ -50,16 +49,20 @@ class LotorInesperatus:
     diswin.refresh()
     stdscr.refresh()
 
-  def curses_keymanage(self, curses, stdscr, start, index) -> Tuple:
+  def curses_keymanage(self, curses, stdscr, start, astart, index, asmlen) -> Tuple:
     stop = False
     ch = stdscr.getch()
     if ch == ord('Q') or ch == ord('q'): stop = True
-    elif ch == curses.KEY_DOWN: start += 1
-    elif ch == curses.KEY_UP and start > 0: start -= 1
+    elif ch == curses.KEY_DOWN:
+      start += 1
+      if astart < asmlen: astart += 1
+    elif ch == curses.KEY_UP and start > 0:
+      if start > 0: start -= 1
+      if astart > 0: astart -= 1
     if ch == curses.KEY_MOUSE:
       if index % 2: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_GREEN)
       else: curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_RED)
-    return start, stop, index
+    return start, stop, index, astart
 
   def curses_progress(self, curses, stdscr, progress, pmax) -> None:
     curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
@@ -69,20 +72,18 @@ class LotorInesperatus:
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (width - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
 
   def curses_menu(self) -> None: # TODO if needed
-    menu_items = ["Option 1", "Option 2", "Option 3"]
+    menu_items = ['Option 1', 'Option 2', 'Option 3']
     selected = 0
     while True:
       stdscr.clear()
       for i, item in enumerate(menu_items):
-        if i == selected: stdscr.addstr(i, 0, f"> {item}", curses.A_REVERSE)
+        if i == selected: stdscr.addstr(i, 0, f'> {item}', curses.A_REVERSE)
         else: stdscr.addstr(i, 0, item)
       key = stdscr.getch()
-      if key == curses.KEY_UP and selected > 0:
-        selected -= 1
-      elif key == curses.KEY_DOWN and selected < len(menu_items) - 1:
-        selected += 1
+      if key == curses.KEY_UP and selected > 0: selected -= 1
+      elif key == curses.KEY_DOWN and selected < len(menu_items) - 1: selected += 1
       elif key == 10:  # Enter key
-        stdscr.addstr(len(menu_items) + 1, 0, f"You selected: {menu_items[selected]}")
+        stdscr.addstr(len(menu_items) + 1, 0, f'You selected: {menu_items[selected]}')
         stdscr.refresh()
         stdscr.getch()
         break
@@ -90,10 +91,10 @@ class LotorInesperatus:
 
   def cwin(self, stdscr) -> None:
     bindat = self.get_binary()
-    asmdat = self.get_disassembly()
+    asmdat, asmlen = self.get_disassembly()
     self.curses_setup(curses, stdscr)
     try:
-      index, start = 0, 0
+      index, start, astart = 0, 0, 0
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
       while True:
@@ -115,12 +116,17 @@ class LotorInesperatus:
         infwin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
         s1 = []
-        for i in range(21):
-          s1.append(asmdat[i])
-          diswin.addstr(i, 1, s1[i])
+        if asmlen < 11:
+          for i in range(asmlen):
+            s1.append(asmdat[i])
+            diswin.addstr(i, 1, s1[i])
+        else:
+          for i in range(0 + astart, 10 + astart):
+            s1.append(asmdat[i])
+            diswin.addstr(i - astart, 1, s1[i - astart])
         self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
-        start, stop, index = self.curses_keymanage(curses, stdscr, start, index)
+        start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen-10)
         if stop: break
         index += 1
     except Exception as err: print(f'Got error(s) [{str(err)}]')
