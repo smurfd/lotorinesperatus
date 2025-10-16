@@ -1,26 +1,43 @@
 #!/usr/bin/env python3
 from typing import List, Tuple
-import subprocess, curses, os
+import platform, subprocess, capstone, curses, sys, os
 
 class LotorInesperatus:
   def __init__(self, fn) -> None:
     self.chunks, self.disasm = [], []
+    self.bin = b''
     self.fn = fn
     self.nr = 0
     with open(self.fn, 'rb') as f:
+      self.bin = f.read()
+      f.seek(0)
       while True:
+        #chunk = self.bin[(self.nr * 4) + 4]#f.read(4)
         chunk = f.read(4)
         if not chunk: break
+        #self.bin += chunk
         self.chunks.append(chunk)
         self.nr += 1
     result = subprocess.run(['objdump', '-d', fn], capture_output=True, text=True)
     self.disasm = result.stdout
+
+  def get_bin(self) -> bytes:
+    return self.bin
 
   def get_binary(self) -> List:
     return self.chunks
 
   def get_disassembly(self) -> Tuple:
     return [s for s in self.disasm.splitlines()], len(self.disasm.splitlines())
+
+  def get_dis(self, code):
+    if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
+    elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+    cs.skipdata = True
+    ret = ''
+    for instr in cs.disasm(code, 0): ret += f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n'
+    return ret, len(ret)
+    #sys.stdout.flush()
 
   def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
@@ -66,10 +83,9 @@ class LotorInesperatus:
 
   def curses_progress(self, curses, stdscr, progress, pmax) -> None:
     curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
-    width = 83
-    filled = int(width * progress / pmax)
+    filled = int(83 * progress / pmax) # 83 == width
     prgstr = '{:03}'.format(progress * 100 // pmax)
-    stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (width - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
+    stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (83 - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
 
   def curses_menu(self) -> None: # TODO if needed
     menu_items = ['Option 1', 'Option 2', 'Option 3']
@@ -91,15 +107,17 @@ class LotorInesperatus:
 
   def cwin(self, stdscr) -> None:
     bindat = self.get_binary()
-    asmdat, asmlen = self.get_disassembly()
+    bind = self.get_bin()
+    #asmdat, asmlen = self.get_disassembly() #self.get_dis(bindat)#bind) #self.get_disassembly()
+    asmdat, asmlen = self.get_dis(bind)
     self.curses_setup(curses, stdscr)
     try:
       index, start, astart = 0, 0, 0
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
       while True:
-        infwin = curses.newwin(10, 12, 14, 3) # hight, width, starty, startx
-        hexwin = curses.newwin(10, 90, 3, 3)
+        hexwin = curses.newwin(10, 90, 3, 3) # hight, width, starty, startx
+        infwin = curses.newwin(10, 12, 14, 3)
         diswin = curses.newwin(30, 77, 14, 16)
         infwin.bkgd(' ', curses.color_pair(1))
         hexwin.bkgd(' ', curses.color_pair(2))
@@ -116,14 +134,16 @@ class LotorInesperatus:
         infwin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
         s1 = []
+
         if asmlen < 11:
           for i in range(asmlen):
-            s1.append(asmdat[i])
+            s1.append(asmdat.splitlines()[i])
             diswin.addstr(i, 1, s1[i])
         else:
           for i in range(0 + astart, 10 + astart):
-            s1.append(asmdat[i])
+            s1.append(asmdat.splitlines()[i])
             diswin.addstr(i - astart, 1, s1[i - astart])
+
         self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
         start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen-10)
