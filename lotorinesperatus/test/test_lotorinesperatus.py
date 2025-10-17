@@ -8,7 +8,7 @@ def t_lotorinesperatus() -> None:
 
 def test_t():
   l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
-  lb, ll = l.get_dis(l.get_bin())
+  lb, ll = l.get_disassembly(l.get_binary())
   print(lb)
   print(ll)
 

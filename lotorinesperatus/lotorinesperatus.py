@@ -5,39 +5,21 @@ import platform, subprocess, capstone, curses, sys, os
 class LotorInesperatus:
   def __init__(self, fn) -> None:
     self.chunks, self.disasm = [], []
-    self.bin = b''
-    self.fn = fn
-    self.nr = 0
+    self.bin, self.fn, self.nr = b'', fn, 0
     with open(self.fn, 'rb') as f:
       self.bin = f.read()
-      f.seek(0)
-      while True:
-        #chunk = self.bin[(self.nr * 4) + 4]#f.read(4)
-        chunk = f.read(4)
-        if not chunk: break
-        #self.bin += chunk
-        self.chunks.append(chunk)
-        self.nr += 1
-    result = subprocess.run(['objdump', '-d', fn], capture_output=True, text=True)
-    self.disasm = result.stdout
+      self.nr = len(self.bin) // 4
 
-  def get_bin(self) -> bytes:
+  def get_binary(self) -> bytes:
     return self.bin
 
-  def get_binary(self) -> List:
-    return self.chunks
-
-  def get_disassembly(self) -> Tuple:
-    return [s for s in self.disasm.splitlines()], len(self.disasm.splitlines())
-
-  def get_dis(self, code):
+  def get_disassembly(self, code):
     if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
     elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     cs.skipdata = True
     ret = ''
     for instr in cs.disasm(code, 0): ret += f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n'
     return ret, len(ret)
-    #sys.stdout.flush()
 
   def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
@@ -106,10 +88,8 @@ class LotorInesperatus:
 
 
   def cwin(self, stdscr) -> None:
-    bindat = self.get_binary()
-    bind = self.get_bin()
-    #asmdat, asmlen = self.get_disassembly() #self.get_dis(bindat)#bind) #self.get_disassembly()
-    asmdat, asmlen = self.get_dis(bind)
+    bind = self.get_binary()
+    asmdat, asmlen = self.get_disassembly(bind)
     self.curses_setup(curses, stdscr)
     try:
       index, start, astart = 0, 0, 0
@@ -128,13 +108,12 @@ class LotorInesperatus:
         for i in range(start + 1, start + 9):
           s0 = []
           for j in range(7):
-            s0.append('0x{:08x}'.format(int.from_bytes(bindat[((i * 4) - 4) + j])))
+            s0.append('0x{:08x}'.format(bind[((i * 4) - 4) + j]))
             hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
             hexwin.addstr(i - start, 10 + (11 * j), s0[j])
-        infwin.addstr(1, 1, '0x{:08x}'.format(int.from_bytes(bindat[(start * 4)])))
+        infwin.addstr(1, 1, '0x{:08x}'.format(bind[(start * 4)]))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
         s1 = []
-
         if asmlen < 11:
           for i in range(asmlen):
             s1.append(asmdat.splitlines()[i])
@@ -143,7 +122,6 @@ class LotorInesperatus:
           for i in range(0 + astart, 10 + astart):
             s1.append(asmdat.splitlines()[i])
             diswin.addstr(i - astart, 1, s1[i - astart])
-
         self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
         start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen-10)
