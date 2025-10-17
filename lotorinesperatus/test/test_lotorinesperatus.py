@@ -3,7 +3,7 @@ from lotorinesperatus.lotorinesperatus import LotorInesperatus
 import platform, capstone, curses, sys, os
 
 
-def test_lotorinesperatus() -> None:
+def t_lotorinesperatus() -> None:
   curses.wrapper(LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin').cwin)
 
 def test_t():
@@ -13,6 +13,6 @@ def test_t():
   print(ll)
 
 if __name__ == '__main__':
-  test_lotorinesperatus()
+  t_lotorinesperatus()
   test_t()
   print('OK')
