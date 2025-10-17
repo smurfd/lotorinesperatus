@@ -13,7 +13,7 @@ class LotorInesperatus:
   def get_binary(self) -> bytes:
     return self.bin
 
-  def get_disassembly(self, code):
+  def get_disassembly(self, code) -> Tuple:
     if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
     elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     cs.skipdata = True
@@ -124,7 +124,7 @@ class LotorInesperatus:
             diswin.addstr(i - astart, 1, s1[i - astart])
         self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
-        start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen-10)
+        start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen - 10)
         if stop: break
         index += 1
     except Exception as err: print(f'Got error(s) [{str(err)}]')

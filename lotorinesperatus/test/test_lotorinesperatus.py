@@ -3,16 +3,18 @@ from lotorinesperatus.lotorinesperatus import LotorInesperatus
 import platform, capstone, curses, sys, os
 
 
-def t_lotorinesperatus() -> None:
+def curses_lotorinesperatus() -> None:
   curses.wrapper(LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin').cwin)
 
-def test_t():
+def test_lotorinesperatus() -> None:
   l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
   lb, ll = l.get_disassembly(l.get_binary())
-  print(lb)
-  print(ll)
+  with open(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.genasm', 'r') as f:
+    genb = f.read()
+    genl = len(genb)
+  assert(genl == ll)
+  assert(genb == lb)
 
 if __name__ == '__main__':
-  t_lotorinesperatus()
-  test_t()
+  curses_lotorinesperatus()
   print('OK')
