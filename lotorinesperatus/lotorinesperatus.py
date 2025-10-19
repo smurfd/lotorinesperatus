@@ -16,9 +16,8 @@ class LotorInesperatus:
   def get_disassembly(self, code) -> Tuple:
     if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
     elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-    cs.skipdata = True
-    ret = ''
-    for instr in cs.disasm(code, 0): ret += f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n'
+    cs.skipdata, ret = True, ''
+    [ret := ret + f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n' for instr in cs.disasm(code, 0)]
     return ret, len(ret)
 
   def curses_setup(self, curses, stdscr) -> None:
@@ -49,8 +48,7 @@ class LotorInesperatus:
     stdscr.refresh()
 
   def curses_keymanage(self, curses, stdscr, start, astart, index, asmlen) -> Tuple:
-    stop = False
-    ch = stdscr.getch()
+    ch, stop = stdscr.getch(), False
     if ch == ord('Q') or ch == ord('q'): stop = True
     elif ch == curses.KEY_DOWN:
       start += 1
@@ -65,27 +63,8 @@ class LotorInesperatus:
 
   def curses_progress(self, curses, stdscr, progress, pmax) -> None:
     curses.init_pair(3, curses.COLOR_RED, curses.COLOR_WHITE)
-    filled = int(83 * progress / pmax) # 83 == width
-    prgstr = '{:03}'.format(progress * 100 // pmax)
+    filled, prgstr = int(83 * progress / pmax), '{:03}'.format(progress * 100 // pmax)
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (83 - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
-
-  def curses_menu(self) -> None: # TODO if needed
-    menu_items = ['Option 1', 'Option 2', 'Option 3']
-    selected = 0
-    while True:
-      stdscr.clear()
-      for i, item in enumerate(menu_items):
-        if i == selected: stdscr.addstr(i, 0, f'> {item}', curses.A_REVERSE)
-        else: stdscr.addstr(i, 0, item)
-      key = stdscr.getch()
-      if key == curses.KEY_UP and selected > 0: selected -= 1
-      elif key == curses.KEY_DOWN and selected < len(menu_items) - 1: selected += 1
-      elif key == 10:  # Enter key
-        stdscr.addstr(len(menu_items) + 1, 0, f'You selected: {menu_items[selected]}')
-        stdscr.refresh()
-        stdscr.getch()
-        break
-
 
   def cwin(self, stdscr) -> None:
     bind = self.get_binary()
