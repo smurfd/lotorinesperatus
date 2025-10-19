@@ -8,7 +8,8 @@ def curses_lotorinesperatus() -> None:
 
 def test_lotorinesperatus() -> None:
   l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
-  lb, ll = l.get_disassembly(l.get_binary())
+  bind, _ = l.get_binary()
+  lb, ll = l.get_disassembly(bind)
   with open(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.genasm', 'r') as f:
     genb = f.read()
     genl = len(genb)

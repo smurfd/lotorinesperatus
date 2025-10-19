@@ -10,8 +10,8 @@ class LotorInesperatus:
       self.bin = f.read()
       self.nr = len(self.bin) // 4
 
-  def get_binary(self) -> bytes:
-    return self.bin
+  def get_binary(self) -> Tuple:
+    return self.bin, len(self.bin)
 
   def get_disassembly(self, code) -> Tuple:
     if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
@@ -47,11 +47,11 @@ class LotorInesperatus:
     diswin.refresh()
     stdscr.refresh()
 
-  def curses_keymanage(self, curses, stdscr, start, astart, index, asmlen) -> Tuple:
+  def curses_keymanage(self, curses, stdscr, start, astart, index, blen, asmlen) -> Tuple:
     ch, stop = stdscr.getch(), False
     if ch == ord('Q') or ch == ord('q'): stop = True
     elif ch == curses.KEY_DOWN:
-      start += 1
+      if start < blen: start += 1
       if astart < asmlen: astart += 1
     elif ch == curses.KEY_UP and start > 0:
       if start > 0: start -= 1
@@ -67,7 +67,7 @@ class LotorInesperatus:
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (83 - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
 
   def cwin(self, stdscr) -> None:
-    bind = self.get_binary()
+    bind, binlen = self.get_binary()
     asmdat, asmlen = self.get_disassembly(bind)
     self.curses_setup(curses, stdscr)
     try:
@@ -84,26 +84,25 @@ class LotorInesperatus:
         infwin.border(0)
         hexwin.border(0)
         diswin.border(0)
-        for i in range(start + 1, start + 9):
+        if binlen < 11: blen = binlen
+        else: blen = 10
+        for i in range(start + 1, start + blen):
           s0 = []
           for j in range(7):
             s0.append('0x{:08x}'.format(bind[((i * 4) - 4) + j]))
             hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
-            hexwin.addstr(i - start, 10 + (11 * j), s0[j])
+            hexwin.addstr(i - start, blen + ((blen + 1) * j), s0[j])
         infwin.addstr(1, 1, '0x{:08x}'.format(bind[(start * 4)]))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
         s1 = []
-        if asmlen < 11:
-          for i in range(asmlen):
-            s1.append(asmdat.splitlines()[i])
-            diswin.addstr(i, 1, s1[i])
-        else:
-          for i in range(0 + astart, 10 + astart):
-            s1.append(asmdat.splitlines()[i])
-            diswin.addstr(i - astart, 1, s1[i - astart])
+        if asmlen < 11: alen = asmlen
+        else: alen = 10
+        for i in range(astart + 0, astart + alen):
+          s1.append(asmdat.splitlines()[i])
+          diswin.addstr(i - astart, 1, s1[i - astart])
         self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
-        start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, asmlen - 10)
+        start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, binlen, asmlen - 10)
         if stop: break
         index += 1
     except Exception as err: print(f'Got error(s) [{str(err)}]')
