@@ -2,9 +2,49 @@
 from typing import List, Tuple
 import platform, subprocess, capstone, curses, sys, os
 
+# TODO: Read
+# https://en.wikipedia.org/wiki/Mach-O
+# https://medium.com/@andrewss112/reverse-engineering-mach-o-arm64-d33f6373ed85
+# https://valsamaras.medium.com/arm-64-assembly-series-basic-definitions-and-registers-ec8cc1334e40
+# https://book.hacktricks.wiki/en/macos-hardening/macos-security-and-privilege-escalation/macos-files-folders-and-binaries/universal-binaries-and-mach-o-format.html
+# https://formats.kaitai.io/mach_o/python.html
+# https://oliviagallucci.com/the-anatomy-of-a-mach-o-structure-code-signing-and-pac/
+# https://yossarian.net/res/pub/macho-internals/macho-internals.pdf
+class Assembly:  # TODO: if/when support several flavours, inherit from this
+  def __init__(self, fn, flavour="arm64") -> None:
+    self.flavour = flavour
+    self.header = [b'', b'', b'', b'', b'', b'', b'', b'']
+    self.loader = [b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'']
+    self.fn = fn
+    with open(self.fn, 'rb') as f:
+      self.h = f.read(32)
+      self.l = f.read()
+  def get_maco_header(self):        # [::-1] for big endian
+    self.header[0] = self.h[0:4]    # Magic number
+    self.header[1] = self.h[4:8]    # CPU type
+    self.header[2] = self.h[8:12]   # CPU subtype
+    self.header[3] = self.h[12:16]  # Filetype
+    self.header[4] = self.h[16:20]  # Number of load commands
+    self.header[5] = self.h[20:24]  # Size of load commands
+    self.header[6] = self.h[24:28]  # Flags
+    self.header[7] = self.h[28:32]  # Reserved. 64bit only
+    return self.header
+  def get_maco_loader(self):
+    self.loader[0] = self.l[0:4]    # Command type
+    self.loader[1] = self.l[4:8]    # Command size
+    self.loader[2] = self.l[8:24]   # Segment name
+    self.loader[3] = self.l[24:32]  # Address
+    self.loader[4] = self.l[32:40]  # Address size
+    self.loader[5] = self.l[40:48]  # File offset
+    self.loader[6] = self.l[48:56]  # Size (bytes from file offset)
+    self.loader[7] = self.l[56:60]  # Maximum virtual memory protection
+    self.loader[8] = self.l[60:64]  # Initial virtual memory protection
+    self.loader[9] = self.l[64:68]  # Number of sections
+    self.loader[10]= self.l[68:72]  # Flags32
+    return self.loader
+
 class FormatAsm:
-  def __init__(self) -> None:
-    pass
+  def __init__(self) -> None: pass
   def get_color_red(self, s): return '\033[91m{}\033[00m'.format(s)
   def get_color_green(self, s): return '\033[92m {}\033[00m'.format(s)
   def get_color_yellow(self, s): return '\033[93m {}\033[00m'.format(s)
@@ -16,7 +56,7 @@ class FormatAsm:
       elif i == 1: r = self.get_color_green(str(x))
       elif i == 2: r = self.get_color_yellow(str(x))
       else: r = self.get_color_purple(str(x))
-      ret += r + ' '
+      ret += (r + ' ')
     return ret
   def print(self, st) -> None:
     for line in st.split('\n'): print(self.format_output(line))

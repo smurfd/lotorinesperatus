@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lotorinesperatus.lotorinesperatus import LotorInesperatus, FormatAsm
+from lotorinesperatus.lotorinesperatus import LotorInesperatus, FormatAsm, Assembly
 import platform, capstone, curses, sys, os
 
 
@@ -23,6 +23,16 @@ def print_asm(pth) -> None:
   FormatAsm().print(lb)
 
 if __name__ == '__main__':
-  curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')  # Cursor ui
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')                # just print the asm
+  if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
+    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')  # Cursor ui
+  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')                  # just print the asm
+
+  # Read our own assembly
+  a = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
+  header = a.get_maco_header()
+  print(header)
+  print("nr loads", int.from_bytes(header[4]))
+  print("sz loads", int.from_bytes(header[5]))
+  loader = a.get_maco_loader()
+  print(loader)
   print('OK')
