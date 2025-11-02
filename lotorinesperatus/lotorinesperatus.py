@@ -2,6 +2,25 @@
 from typing import List, Tuple
 import platform, subprocess, capstone, curses, sys, os
 
+class FormatAsm:
+  def __init__(self) -> None:
+    pass
+  def get_color_red(self, s): return '\033[91m{}\033[00m'.format(s)
+  def get_color_green(self, s): return '\033[92m {}\033[00m'.format(s)
+  def get_color_yellow(self, s): return '\033[93m {}\033[00m'.format(s)
+  def get_color_purple(self, s): return '\033[95m {}\033[00m'.format(s)
+  def format_output(self, st):
+    ret = ''
+    for i,x in enumerate(st.split('\t')):
+      if i == 0: r = self.get_color_red(str(x))
+      elif i == 1: r = self.get_color_green(str(x))
+      elif i == 2: r = self.get_color_yellow(str(x))
+      else: r = self.get_color_purple(str(x))
+      ret += r + ' '
+    return ret
+  def print(self, st) -> None:
+    for line in st.split('\n'): print(self.format_output(line))
+
 class LotorInesperatus:
   def __init__(self, fn) -> None:
     self.chunks, self.disasm = [], []
@@ -13,11 +32,13 @@ class LotorInesperatus:
   def get_binary(self) -> Tuple:
     return self.bin, len(self.bin)
 
-  def get_disassembly(self, code) -> Tuple:
+  def get_disassembly(self, code, test=False) -> Tuple:
     if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
     elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     cs.skipdata, ret = True, ''
-    [ret := ret + f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n' for instr in cs.disasm(code, 0)]
+    # TODO: this logic should be in format
+    if test: [ret := ret + f'{instr.address:#08x}: {instr.mnemonic}\t{instr.op_str}\n' for instr in cs.disasm(code, 0)]
+    else: [ret := ret + f'{instr.address:#08x}|{instr.mnemonic if len(instr.mnemonic) > 4 else instr.mnemonic+(" "*(5-len(instr.mnemonic)))}|{"|".join(str(y) for y in instr.op_str.split(", "))}\n'.replace('|', '\t') for instr in cs.disasm(code, 0)]
     return ret, len(ret)
 
   def curses_setup(self, curses, stdscr) -> None:
