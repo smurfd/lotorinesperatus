@@ -4,10 +4,10 @@ import platform, capstone, curses, sys, os
 
 
 def test_lotorinesperatus() -> None:
-  l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
+  l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_macho_arm64.bin')
   bind, _ = l.get_binary()
   lb, ll = l.get_disassembly(bind, test=True)
-  with open(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.genasm', 'r') as f:
+  with open(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_macho_arm64.genasm', 'r') as f:
     genb = f.read()
     genl = len(genb)
   assert(genl == ll)
@@ -24,11 +24,11 @@ def print_asm(pth) -> None:
 
 if __name__ == '__main__':
   if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
-    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')  # Cursor ui
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')                  # just print the asm
+    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_macho_arm64.bin')  # Cursor ui
+  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_macho_arm64.bin')                  # just print the asm
 
   # Read our own assembly
-  a = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello.bin')
+  a = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_macho_arm64.bin')
   header = a.get_maco_header()
   print(header)
   print("nr loads", int.from_bytes(header[4]))
