@@ -1,0 +1,21 @@
+
+hello_arm64_macho.bin:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100000460 <_main>:
+100000460: a9bf7bfd    	stp	x29, x30, [sp, #-0x10]!
+100000464: 910003fd    	mov	x29, sp
+100000468: 90000000    	adrp	x0, 0x100000000 <_puts+0x100000000>
+10000046c: 91124000    	add	x0, x0, #0x490
+100000470: 94000004    	bl	0x100000480 <_puts+0x100000480>
+100000474: 52800000    	mov	w0, #0x0                ; =0
+100000478: a8c17bfd    	ldp	x29, x30, [sp], #0x10
+10000047c: d65f03c0    	ret
+
+Disassembly of section __TEXT,__stubs:
+
+0000000100000480 <__stubs>:
+100000480: 90000030    	adrp	x16, 0x100004000 <_puts+0x100004000>
+100000484: f9400210    	ldr	x16, [x16]
+100000488: d61f0200    	br	x16

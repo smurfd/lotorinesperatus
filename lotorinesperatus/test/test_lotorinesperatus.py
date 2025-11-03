@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 from lotorinesperatus.lotorinesperatus import LotorInesperatus
-#from lotorinesperatus.assembly_format import FormatAsm
 from lotorinesperatus.assembly import Assembly, Format
 import platform, capstone, curses, sys, os
 
 
-def test_lotorinesperatus() -> None:
+def test_lotorinesperatus_arm() -> None:
   l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')
   bind, _ = l.get_binary()
   lb, ll = l.get_disassembly(bind, test=True)
@@ -14,6 +13,16 @@ def test_lotorinesperatus() -> None:
     genl = len(genb)
   assert(genl == ll)
   assert(genb == lb)
+def test_lotorinesperatus_amd() -> None:
+  l = LotorInesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin')
+  bind, _ = l.get_binary()
+  lb, ll = l.get_disassembly(bind, test=True)
+  print(lb)
+  #with open(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.genasm', 'r') as f:
+  #  genb = f.read()
+  #  genl = len(genb)
+  #assert(genl == ll)
+  #assert(genb == lb)
 def curses_lotorinesperatus(pth) -> None: curses.wrapper(LotorInesperatus(pth).cwin)
 def print_asm(pth) -> None:
   l = LotorInesperatus(pth)
@@ -22,6 +31,7 @@ def print_asm(pth) -> None:
   Format().print(lb)
 
 if __name__ == '__main__':
+  """
   if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
     curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor ui
   print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # just print the asm
@@ -41,4 +51,6 @@ if __name__ == '__main__':
   print(amd_header_program)
   print(amd_header_section)
   print('OK')
+  """
+  test_lotorinesperatus_amd()
 
