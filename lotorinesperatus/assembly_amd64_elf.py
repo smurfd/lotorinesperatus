@@ -1,6 +1,6 @@
 # TODO: READ
 # https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
-# TODO: use real values for ELF, now this is for macho
+# https://gabi.xinuos.com/v42/elf.pdf
 class Amd64_elf:
   def __init__(self, fn):
     self.header = [b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'']
@@ -8,10 +8,7 @@ class Amd64_elf:
     self.secthd = [b'', b'', b'', b'', b'', b'', b'', b'', b'', b'']
     hl, ll, sl = self.get_lengths()
     self.fn = fn
-    with open(self.fn, 'rb') as f:
-      self.h = f.read(hl)
-      self.p = f.read(ll)
-      self.s = f.read(sl)
+    with open(self.fn, 'rb') as f: self.h, self.p, self.s = f.read(hl), f.read(ll) f.read(sl)
   def get_lengths(self): return 64, 72, 65   # header, proghd, secthd
   def get_header(self):              # [::-1] for big endian
     self.header[0] = self.h[0:4]     # Magic number

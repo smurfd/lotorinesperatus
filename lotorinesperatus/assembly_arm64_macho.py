@@ -12,9 +12,7 @@ class Arm64_macho:
     self.loader = [b'', b'', b'', b'', b'', b'', b'', b'', b'', b'', b'']
     hl, ll = self.get_lengths()
     self.fn = fn
-    with open(self.fn, 'rb') as f:
-      self.h = f.read(hl)
-      self.l = f.read(ll)
+    with open(self.fn, 'rb') as f: self.h, self.l = f.read(hl), f.read(ll)
   def get_lengths(self): return 32, 72   # header, loader
   def get_header(self):             # [::-1] for big endian
     self.header[0] = self.h[0:4]    # Magic number
