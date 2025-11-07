@@ -101,4 +101,3 @@ class LotorInesperatus:
         index += 1
     except Exception as err: print(f'Got error(s) [{str(err)}]')
     self.curses_teardown(curses, stdscr)
-

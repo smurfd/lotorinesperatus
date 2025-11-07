@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from lotorinesperatus.lotorinesperatus import LotorInesperatus
 from lotorinesperatus.assembly import Assembly, Format
-import platform, capstone, curses, sys, os
+import platform, curses, sys, os
 
 
 def test_lotorinesperatus_arm() -> None:
@@ -39,15 +39,20 @@ if __name__ == '__main__':
   arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
   arm_header = arm.asm.get_header()
   arm_loader = arm.asm.get_loader()
+  arm_data   = arm.asm.get_data()
   print(arm_header)
   print(arm_loader)
   print('--- amd64 elf header ---')
   amd = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
-  amd_header = amd.asm.get_header()
+  amd_header         = amd.asm.get_header()
   amd_header_program = amd.asm.get_header_program()
   amd_header_section = amd.asm.get_header_section()
+  amd_data           = amd.asm.get_data()
   print(amd_header)
   print(amd_header_program)
   print(amd_header_section)
+  print(amd.bytes2hex(amd_header))
+  print(amd.bytes2hex(amd_data))
+  print(type(amd_header))
+  print(type(amd_data))
   print('OK')
-

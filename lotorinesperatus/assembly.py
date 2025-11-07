@@ -1,5 +1,6 @@
 from lotorinesperatus.assembly_arm64_macho import Arm64_macho
 from lotorinesperatus.assembly_amd64_elf import Amd64_elf
+import binascii
 
 
 class Assembly:
@@ -10,6 +11,11 @@ class Assembly:
     self.fn = fn
     if self.arch == 'arm64' and self.flavour == 'arm64' and binfmt == 'macho': self.asm = Arm64_macho(self.fn)
     elif self.arch == 'amd64' and self.flavour == 'amd64' and binfmt == 'elf': self.asm = Amd64_elf(self.fn)
+  def bytes2hex(self, b):
+    if isinstance(b, list): return [(f'{binascii.hexlify(h).decode():08}') for h in b]
+    elif isinstance(b, bytes): st = f'{binascii.hexlify(b).decode()}'; return [st[i:i+8] for i in range(0, len(st), 8)]
+  def hex2str(self, h): return ''.join([chr(int(h[i:i+2], 16)) for i in range(0, len(h), 2)]) 
+
 
 class Format:
   def __init__(self) -> None: pass
@@ -28,4 +34,3 @@ class Format:
     return ret
   def print(self, st) -> None:
     for line in st.split('\n'): print(self.format_output(line))
-
