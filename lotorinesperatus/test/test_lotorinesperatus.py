@@ -29,12 +29,7 @@ def print_asm(pth) -> None:
   bind, _ = l.get_binary()
   lb, ll = l.get_disassembly(bind)
   Format().print(lb)
-
-if __name__ == '__main__':
-  if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
-    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor ui
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # just print the asm
-  # Read our own assembly
+def read_arm():
   print('--- arm64 macho header ---')
   arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
   arm_header = arm.asm.get_header()
@@ -42,6 +37,8 @@ if __name__ == '__main__':
   arm_data   = arm.asm.get_data()
   print(arm_header)
   print(arm_loader)
+  print(arm.bytes2hex(arm_data))
+def read_amd():
   print('--- amd64 elf header ---')
   amd = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
   amd_header         = amd.asm.get_header()
@@ -53,6 +50,12 @@ if __name__ == '__main__':
   print(amd_header_section)
   print(amd.bytes2hex(amd_header))
   print(amd.bytes2hex(amd_data))
-  print(type(amd_header))
-  print(type(amd_data))
+
+if __name__ == '__main__':
+  if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
+    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor ui
+  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # just print the asm
+  # Read our own assembly
+  read_arm()
+  read_amd()
   print('OK')

@@ -5,7 +5,7 @@ class Amd64_elf:
   def __init__(self, fn):
     self.header, self.proghd, self.secthd, self.data, self.fn = [], [], [], [], fn
     hl, ll, sl = self.get_lengths()
-    with open(self.fn, 'rb') as f: self.h, self.p, self.s, self.d = f.read(hl), f.read(ll), f.read(sl), f.read()
+    with open(self.fn, 'rb') as f: self.h, self.p, self.s, _, self.d = f.read(hl), f.read(ll), f.read(sl), f.read(3), f.read()
   def get_lengths(self): return 64, 72, 65         # header, proghd, secthd
   def get_header(self):                            # [::-1] for big endian
     self.header.append(self.h[0:4])                # Magic number

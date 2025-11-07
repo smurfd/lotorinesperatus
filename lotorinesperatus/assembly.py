@@ -32,5 +32,4 @@ class Format:
       else: r = self.get_color_purple(str(x))
       ret += (r + ' ')
     return ret
-  def print(self, st) -> None:
-    for line in st.split('\n'): print(self.format_output(line))
+  def print(self, st) -> None: [print(f'{self.format_output(line)}') for line in st.split('\n')]
