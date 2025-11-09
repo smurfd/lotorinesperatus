@@ -5,17 +5,19 @@ import binascii
 
 class Assembly:
   def __init__(self, fn, arch='arm64', flavour='arm64', binfmt='macho') -> None:
-    self.flavour = flavour
-    self.binfmt = binfmt
-    self.arch = arch
-    self.fn = fn
+    self.flavour, self.binfmt, self.arch, self.fn = flavour, binfmt, arch, fn
     if self.arch == 'arm64' and self.flavour == 'arm64' and binfmt == 'macho': self.asm = Arm64_macho(self.fn)
     elif self.arch == 'amd64' and self.flavour == 'amd64' and binfmt == 'elf': self.asm = Amd64_elf(self.fn)
   def bytes2hex(self, b):
     if isinstance(b, list): return [(f'{binascii.hexlify(h).decode():08}') for h in b]
-    elif isinstance(b, bytes): st = f'{binascii.hexlify(b).decode()}'; return [st[i:i+8] for i in range(0, len(st), 8)]
-  def hex2str(self, h): return ''.join([chr(int(h[i:i+2], 16)) for i in range(0, len(h), 2)]) 
-
+    elif isinstance(b, bytes): st = f'{binascii.hexlify(b).decode()}'; return [st[i:i + 8] for i in range(0, len(st), 8)]
+  def hex2str(self, h): print("h2s", type(h));return ''.join([chr(int(h[i:i + 2], 16)) for i in range(0, len(h), 2)])
+  def print_hex(self, h):
+    for i,x in enumerate(self.bytes2hex(h)):
+      if i % 8 == 7: print(f'{x:08}')                             # Write hex value, 8 digits and Line break after 8th entry
+      elif i % 8: print(f'{x:08} ', end='')                       # Write hex value, 8 digits
+      elif i % 8 == 0: print(f'{int(i) * 4:08} {x:08} ', end='')  # First entyr on row, enter counter * 4 because of 4 read bytes per hex entry
+    print('\n')
 
 class Format:
   def __init__(self) -> None: pass
