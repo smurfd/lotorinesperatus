@@ -38,6 +38,9 @@ def read_arm_macho():
   arm.print_hex(arm_header)
   arm.print_hex(arm_loader)
   arm.print_hex(arm_data)
+  arm.print_hex(arm_loader[2])
+  for i in range(len(arm_loader)): print("Header", arm.hex2str(arm_loader[i]))
+  print('--- arm64 macho header ---')
 def read_amd_elf():
   print('--- amd64 elf header ---')
   amd = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
@@ -49,6 +52,7 @@ def read_amd_elf():
   amd.print_hex(amd_header_program)
   amd.print_hex(amd_header_section)
   amd.print_hex(amd_data)
+  print('--- amd64 elf header ---')
 
 
 if __name__ == '__main__':

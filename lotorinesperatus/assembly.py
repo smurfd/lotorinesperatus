@@ -11,7 +11,7 @@ class Assembly:
   def bytes2hex(self, b):
     if isinstance(b, list): return [(f'{binascii.hexlify(h).decode():08}') for h in b]
     elif isinstance(b, bytes): st = f'{binascii.hexlify(b).decode()}'; return [st[i:i + 8] for i in range(0, len(st), 8)]
-  def hex2str(self, h): print("h2s", type(h));return ''.join([chr(int(h[i:i + 2], 16)) for i in range(0, len(h), 2)])
+  def hex2str(self, h): return ''.join([(h[i:i + 2]).decode('utf-8') for i in range(0, len(h), 2)])
   def print_hex(self, h):
     for i,x in enumerate(self.bytes2hex(h)):
       if i % 8 == 7: print(f'{x:08}')                             # Write hex value, 8 digits and Line break after 8th entry
