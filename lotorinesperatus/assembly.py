@@ -22,12 +22,6 @@ class Format:
   def get_color_yellow(self, s): return '\033[93m {}\033[00m'.format(s)
   def get_color_purple(self, s): return '\033[95m {}\033[00m'.format(s)
   def format_output(self, st):
-    ret = ''
-    for i,x in enumerate(st.split('\t')):
-      if i == 0: r = self.get_color_red(str(x))
-      elif i == 1: r = self.get_color_green(str(x))
-      elif i == 2: r = self.get_color_yellow(str(x))
-      else: r = self.get_color_purple(str(x))
-      ret += (r + ' ')
-    return ret
+    return ' '.join([self.get_color_red(str(x)) if i == 0 else self.get_color_green(str(x)) if i == 1 else self.get_color_yellow(str(x))
+      if i == 2 else self.get_color_purple(str(x)) for i, x in enumerate(st.split('\t'))])
   def print(self, st) -> None: [print(f'{self.format_output(line)}') for line in st.split('\n')]
