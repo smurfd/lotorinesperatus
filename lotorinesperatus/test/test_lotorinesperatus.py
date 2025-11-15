@@ -29,7 +29,7 @@ def print_asm(pth) -> None:
   bind, _ = l.get_binary()
   lb, ll = l.get_disassembly(bind)
   Format().print(lb)
-def read_arm_macho():
+def read_arm_macho() -> None:
   print('--- arm64 macho header ---')
   arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
   arm_header = arm.asm.get_header()
@@ -41,7 +41,7 @@ def read_arm_macho():
   for i in range(len(arm_header)): print(f'Header {arm.hex2str(arm_header[i])}')
   for i in range(len(arm_loader)): print(f'Loader {arm.hex2str(arm_loader[i])}')
   print('--- arm64 macho header ---')
-def read_amd_elf():
+def read_amd_elf() -> None:
   print('--- amd64 elf header ---')
   amd = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
   amd_header         = amd.asm.get_header()
@@ -60,8 +60,9 @@ def read_amd_elf():
 
 if __name__ == '__main__':
   if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
-    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor ui
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # just print the asm
+    curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor UI
+  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # Print arm asm (via capstone)
+  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin')                    # Print amd asm (via capstone)
   # Read our own assembly
   read_arm_macho()
   read_amd_elf()

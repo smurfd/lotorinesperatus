@@ -1,4 +1,6 @@
-# TODO: Read
+#!/usr/bin/env python3
+from typing import List, Tuple
+# TODO: READ
 # https://en.wikipedia.org/wiki/Mach-O
 # https://medium.com/@andrewss112/reverse-engineering-mach-o-arm64-d33f6373ed85
 # https://valsamaras.medium.com/arm-64-assembly-series-basic-definitions-and-registers-ec8cc1334e40
@@ -7,12 +9,13 @@
 # https://oliviagallucci.com/the-anatomy-of-a-mach-o-structure-code-signing-and-pac/
 # https://yossarian.net/res/pub/macho-internals/macho-internals.pdf
 class Arm64_macho:
-  def __init__(self, fn):
+  def __init__(self, fn) -> None:
     self.header, self.loader, self.data, self.fn = [], [], [], fn
     hl, ll = self.get_lengths()
     with open(self.fn, 'rb') as f: self.h, self.l, self.d = f.read(hl), f.read(ll), f.read()
-  def get_lengths(self): return 32, 72             # header, loader
-  def get_header(self):                            # [::-1] for big endian
+  def get_lengths(self) -> Tuple:
+    return 32, 72                                  # Lenght of header, loader
+  def get_header(self) -> List:                    # [::-1] for big endian
     self.header.append(self.h[0:4])                # Magic number
     self.header.append(self.h[4:8])                # CPU type
     self.header.append(self.h[8:12])               # CPU subtype
@@ -22,7 +25,7 @@ class Arm64_macho:
     self.header.append(self.h[24:28])              # Flags
     self.header.append(self.h[28:32])              # Reserved. 64bit only
     return self.header
-  def get_loader(self):
+  def get_loader(self) -> List:
     self.loader.append(self.l[0:4])                # Command type
     self.loader.append(self.l[4:8])                # Command size
     self.loader.append(self.l[8:24])               # Segment name
@@ -35,6 +38,6 @@ class Arm64_macho:
     self.loader.append(self.l[64:68])              # Number of sections
     self.loader.append(self.l[68:72])              # Flags32
     return self.loader
-  def get_data(self):
+  def get_data(self) -> bytes:
     self.data = self.d
     return self.data

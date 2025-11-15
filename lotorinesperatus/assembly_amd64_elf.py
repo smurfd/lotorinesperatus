@@ -1,13 +1,16 @@
+#!/usr/bin/env python3
+from typing import List, Tuple
 # TODO: READ
 # https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
 # https://gabi.xinuos.com/v42/elf.pdf
 class Amd64_elf:
-  def __init__(self, fn):
+  def __init__(self, fn) -> None:
     self.header, self.proghd, self.secthd, self.data, self.fn = [], [], [], [], fn
     hl, ll, sl = self.get_lengths()
     with open(self.fn, 'rb') as f: self.h, self.p, self.s, _, self.d = f.read(hl), f.read(ll), f.read(sl), f.read(3), f.read()
-  def get_lengths(self): return 64, 72, 65         # header, proghd, secthd
-  def get_header(self):                            # [::-1] for big endian
+  def get_lengths(self) -> Tuple:
+    return 64, 72, 65                              # Length of header, proghd, secthd
+  def get_header(self) -> List:                    # [::-1] for big endian
     self.header.append(self.h[0:4])                # Magic number
     self.header.append(self.h[4:5])                # 32bit or 64bit
     self.header.append(self.h[5:6])                # Endianess
@@ -29,7 +32,7 @@ class Amd64_elf:
     self.header.append(self.h[60:62])              # Section header number of entries
     self.header.append(self.h[62:64])              # Section header index
     return self.header
-  def get_header_program(self):
+  def get_header_program(self) -> List:
     self.proghd.append(self.p[0:4])                # Segment type
     self.proghd.append(self.p[4:8])                # Segment-dependent flags
     self.proghd.append(self.p[8:16])               # Segment offset in the file image
@@ -39,7 +42,7 @@ class Amd64_elf:
     self.proghd.append(self.p[56:64])              # Size in bytes of the segment in memory
     self.proghd.append(self.p[64:72])              # Alignment
     return self.proghd
-  def get_header_section(self):
+  def get_header_section(self) -> List:
     self.secthd.append(self.s[0:4])                # Offset to name string 
     self.secthd.append(self.s[4:8])                # Type of header
     self.secthd.append(self.s[8:16])               # Flags
@@ -51,6 +54,6 @@ class Amd64_elf:
     self.secthd.append(self.s[48:56])              # Section alignment
     self.secthd.append(self.s[56:64])              # Section entry size
     return self.secthd
-  def get_data(self):
+  def get_data(self) -> bytes:
     self.data = self.d
     return self.data
