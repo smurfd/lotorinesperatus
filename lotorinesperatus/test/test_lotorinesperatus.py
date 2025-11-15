@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
+# ------------------------------------------------------------------------------------------------------------------------------------------------- #
 from lotorinesperatus.lotorinesperatus import LotorInesperatus
 from lotorinesperatus.assembly import Assembly, Format
 import platform, curses, sys, os

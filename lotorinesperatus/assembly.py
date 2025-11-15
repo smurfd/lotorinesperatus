@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
+# ------------------------------------------------------------------------------------------------------------------------------------------------- #
 from lotorinesperatus.assembly_arm64_macho import Arm64_macho
 from lotorinesperatus.assembly_amd64_elf import Amd64_elf
 from typing import List, Tuple, Literal
@@ -16,6 +18,7 @@ class Assembly:
   def hex2str(self, h) -> Literal: return ''.join([(h[i:i + 2]).decode('latin-1') for i in range(0, len(h), 2)])
   def print_hex(self, h) -> None:
     for i in range(0, len(h), 8): print(f'{(i * 4):08} ' + ' '.join([f'{num:08}' for num in h[i:i + 8]]))
+
 
 class Format:
   def __init__(self) -> None: pass
