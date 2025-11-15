@@ -38,8 +38,8 @@ def read_arm_macho():
   arm.print_hex(arm.bytes2hex(arm_header))
   arm.print_hex(arm.bytes2hex(arm_loader))
   arm.print_hex(arm.bytes2hex(arm_data))
-  arm.print_hex(arm.bytes2hex(arm_loader[2]))
-  for i in range(len(arm_loader)): print("Header", arm.hex2str(arm_loader[i]))
+  for i in range(len(arm_header)): print(f'Header {arm.hex2str(arm_header[i])}')
+  for i in range(len(arm_loader)): print(f'Loader {arm.hex2str(arm_loader[i])}')
   print('--- arm64 macho header ---')
 def read_amd_elf():
   print('--- amd64 elf header ---')
@@ -52,6 +52,9 @@ def read_amd_elf():
   amd.print_hex(amd.bytes2hex(amd_header_program))
   amd.print_hex(amd.bytes2hex(amd_header_section))
   amd.print_hex(amd.bytes2hex(amd_data))
+  for i in range(len(amd_header)): print(f'Header {amd.hex2str(amd_header[i])}')
+  for i in range(len(amd_header_program)): print(f'Program {amd.hex2str(amd_header_program[i])}')
+  for i in range(len(amd_header_section)): print(f'Section {amd.hex2str(amd_header_section[i])}')
   print('--- amd64 elf header ---')
 
 
