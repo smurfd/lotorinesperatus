@@ -34,9 +34,34 @@ class Arm64_macho:
     return self.header
   def get_command(self) -> List:
     p1, p2 = 0, 4
+    # TODO: dont just print, save to variables
+    # TODO: make into functions
     for i in range(int(f'{binascii.hexlify(self.get_big(self.h[16:20])).decode()}', 16)):
       nr = self.get_big(self.c[p1:p2])
-      p1, p2 = p1+4, p2+4
+      nrr = int(f'{binascii.hexlify(nr).decode()}', 16)
+      nsec = 0
+      if (nrr == 25): #0x19
+        loa = self.get_loader(p1)
+        nsec = int(f'{binascii.hexlify(self.get_big(loa[9])).decode()}', 16)
+        print(f'cmd loa {i}: {loa}')
+        print(f'cmd loa {i}: SECs {nsec}')
+        s1 = p1 + 72  # 72 for size of loader
+        print('------')
+        for j in range(nsec):
+          sec = self.get_segment(s1+(j * 80))
+          print(f'cmd loa sec {i} {j}: {sec}')
+          pos = self.get_big(sec[4])
+          siz = self.get_big(sec[3])
+          print(f'cmd loa sec {i} {j}: {pos} {siz}')
+          pos = int(f'{binascii.hexlify(pos).decode()}', 16)
+          siz = int(f'{binascii.hexlify(siz).decode()}', 16)
+          print(f'cmd loa sec {i} {j}: {pos} {siz}')
+          with open(self.fn, 'rb') as f: # TODO: read this in __init__?
+            f.seek(pos)  # find position for data in file
+            d = f.read(siz)  # read data size
+            print(f'cmd loa data {i} {j}: {d}')
+        print('------')
+      p1, p2 = p1 + 4, p2 + 4
       sz = self.get_big(self.c[p1:p2])
       sz = int(f'{binascii.hexlify(sz).decode()}', 16)
       print(f'cmd {i}: {nr}')
@@ -44,33 +69,49 @@ class Arm64_macho:
       p1, p2 = p2, p2 + sz - 8
       print(f'cmd {i}: {self.c[p1:p2]}')
       p1, p2 = p2, p2 + 4
-  def get_loader(self) -> List:
-    self.loader.append(self.l[0:4])                # Command type
-    self.loader.append(self.l[4:8])                # Command size
-    self.loader.append(self.l[8:24])               # Segment name
-    self.loader.append(self.l[24:32])              # Address
-    self.loader.append(self.l[32:40])              # Address size
-    self.loader.append(self.l[40:48])              # File offset
-    self.loader.append(self.l[48:56])              # Size (bytes from file offset)
-    self.loader.append(self.l[56:60])              # Maximum virtual memory protection
-    self.loader.append(self.l[60:64])              # Initial virtual memory protection
-    self.loader.append(self.l[64:68])              # Number of sections
-    self.loader.append(self.l[68:72])              # Flags32
+  def get_loader(self, c) -> List:
+    self.loader = []
+    self.loader.append(self.c[c + 0:c + 4])        # Command type
+    self.loader.append(self.c[c + 4:c + 8])        # Command size
+    self.loader.append(self.c[c + 8:c + 24])       # Segment name
+    self.loader.append(self.c[c + 24:c + 32])      # Address
+    self.loader.append(self.c[c + 32:c + 40])      # Address size
+    self.loader.append(self.c[c + 40:c + 48])      # File offset
+    self.loader.append(self.c[c + 48:c + 56])      # Size (bytes from file offset)
+    self.loader.append(self.c[c + 56:c + 60])      # Maximum virtual memory protection
+    self.loader.append(self.c[c + 60:c + 64])      # Initial virtual memory protection
+    self.loader.append(self.c[c + 64:c + 68])      # Number of sections
+    self.loader.append(self.c[c + 68:c + 72])      # Flags32
     return self.loader
-  def get_segment(self) -> List:
-    self.segment.append(self.s[0:16])              # Section name
-    self.segment.append(self.s[16:32])             # Segment name
-    self.segment.append(self.s[32:40])             # Section address
-    self.segment.append(self.s[40:48])             # Section size
-    self.segment.append(self.s[48:52])             # Section file offset
-    self.segment.append(self.s[52:56])             # Alignment
-    self.segment.append(self.s[56:60])             # Relocations file offset
-    self.segment.append(self.s[60:64])             # Number of relocations0
-    self.segment.append(self.s[64:68])             # Flag/type
-    self.segment.append(self.s[68:72])             # Reserved1
-    self.segment.append(self.s[72:76])             # Reserved2
-    self.segment.append(self.s[76:80])             # Reserved3
+  def get_segment(self, c) -> List:
+    self.segment = []
+    self.segment.append(self.c[c + 0:c + 16])              # Section name
+    self.segment.append(self.c[c + 16:c + 32])             # Segment name
+    self.segment.append(self.c[c + 32:c + 40])             # Section address
+    self.segment.append(self.c[c + 40:c + 48])             # Section size
+    self.segment.append(self.c[c + 48:c + 52])             # Section file offset
+    self.segment.append(self.c[c + 52:c + 56])             # Alignment
+    self.segment.append(self.c[c + 56:c + 60])             # Relocations file offset
+    self.segment.append(self.c[c + 60:c + 64])             # Number of relocations0
+    self.segment.append(self.c[c + 64:c + 68])             # Flag/type
+    self.segment.append(self.c[c + 68:c + 72])             # Reserved1
+    self.segment.append(self.c[c + 72:c + 76])             # Reserved2
+    self.segment.append(self.c[c + 76:c + 80])             # Reserved3
     return self.segment
   def get_data(self) -> bytes:
     self.data = self.d
     return self.data
+"""
+$ otool -tvV ./hello_arm64_macho.bin
+./hello_arm64_macho.bin:
+(__TEXT,__text) section
+_main:
+0000000100000460	stp	x29, x30, [sp, #-0x10]!
+0000000100000464	mov	x29, sp
+0000000100000468	adrp	x0, 0 ; 0x100000000
+000000010000046c	add	x0, x0, #0x490 ; literal pool for: "hello world"
+0000000100000470	bl	0x100000480 ; symbol stub for: _puts
+0000000100000474	mov	w0, #0x0
+0000000100000478	ldp	x29, x30, [sp], #0x10
+000000010000047c	ret
+"""

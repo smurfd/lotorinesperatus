@@ -10,6 +10,7 @@ def read_arm_macho() -> None:
   arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
   arm_header = arm.asm.get_header()
   arm_command= arm.asm.get_command()
+  """
   arm_loader = arm.asm.get_loader()
   arm_segment= arm.asm.get_segment()
   arm_data   = arm.asm.get_data()
@@ -20,6 +21,7 @@ def read_arm_macho() -> None:
   for i in range(len(arm_header)): print(f'Header {arm.hex2str(arm_header[i])}')
   for i in range(len(arm_loader)): print(f'Loader {arm.hex2str(arm_loader[i])}')
   for i in range(len(arm_segment)): print(f'Segment {arm.hex2str(arm_segment[i])}')
+  """
   print('--- arm64 macho header ---')
 def read_amd_elf() -> None:
   print('--- amd64 elf header ---')
@@ -40,5 +42,5 @@ def read_amd_elf() -> None:
 
 if __name__ == '__main__':
   read_arm_macho()
-  read_amd_elf()
+  #read_amd_elf()
   print('OK')
