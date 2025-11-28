@@ -79,18 +79,16 @@ class Arm64_macho:
     self.segment.append(self.c[c + 76:c + 80])     # Reserved3
     return self.segment
   def inst(self, i) -> Literal:  # TODO: this isnt going to work, but its a start, more statements needed and some ands to avoid colliding
-    if i[5:9] == '0100': return 'stp'
-    elif i[5:9] == '1000': return 'mov'
-    elif i[5:9] == '1000': return 'adrp'
-    elif i[5:9] == '1000': return 'add'
-    elif i[5:9] == '1010': return 'bl'
-    elif i[5:9] == '0010': return 'mov'
-    elif i[5:9] == '0100': return 'ldp'
-    elif i[5:9] == '1011': return 'ret'
-    elif i[5:9] == '1000': return 'adrp'
-    elif i[5:9] == '1100': return 'ldr'
-    elif i[5:9] == '1011': return 'br'
-
+    if   i[5:13] == '01001101': return 'stp'
+    elif i[5:13] == '10001000': return 'mov1'
+    elif i[5:13] == '10000000': return 'adrp'
+    elif i[5:13] == '10001000': return 'add'
+    elif i[5:13] == '10100000': return 'bl'
+    elif i[5:13] == '00101000': return 'mov2'
+    elif i[5:13] == '01000110': return 'ldp'
+    elif i[5:13] == '10110010': return 'ret'
+    elif i[5:13] == '11001010': return 'ldr'
+    elif i[5:13] == '10110000': return 'br'
   def opcodes(self, c) -> Literal:
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
