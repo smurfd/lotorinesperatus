@@ -79,16 +79,16 @@ class Arm64_macho:
     self.segment.append(self.c[c + 76:c + 80])     # Reserved3
     return self.segment
   def inst(self, i) -> Literal:  # TODO: this isnt going to work, but its a start, more statements needed and some ands to avoid colliding
-    if   i[5:13] == '01001101': return 'stp'
-    elif i[5:13] == '10001000': return 'mov1'
-    elif i[5:13] == '10000000': return 'adrp'
-    elif i[5:13] == '10001000': return 'add'
-    elif i[5:13] == '10100000': return 'bl'
-    elif i[5:13] == '00101000': return 'mov2'
-    elif i[5:13] == '01000110': return 'ldp'
-    elif i[5:13] == '10110010': return 'ret'
-    elif i[5:13] == '11001010': return 'ldr'
-    elif i[5:13] == '10110000': return 'br'
+    if   i[5:13] == '01001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
+    elif i[5:13] == '10001000': return f'mov x{int(i[29:34], 2)}, sp'
+    elif i[5:13] == '10000000': return f'adrp x{int(i[29:34], 2)}, 0'
+    elif i[5:13] == '10001000': return f'add x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, '
+    elif i[5:13] == '10100000': return f'bl'
+    elif i[5:13] == '00101000': return f'mov w{int(i[29:34], 2)}, #0x0'
+    elif i[5:13] == '01000110': return f'ldp x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, [sp], #0x10'
+    elif i[5:13] == '10110010': return f'ret'
+    elif i[5:13] == '11001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
+    elif i[5:13] == '10110000': return f'br x{int(i[24:29], 2)}'
   def opcodes(self, c) -> Literal:
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
@@ -122,21 +122,20 @@ class Arm64_macho:
     # TODO: figure out how to combine data into actual instructions
     # TODO: use data from header to figure out where to start and many opcodes
   def get_sections(self, nr, p) -> List:
-    #for i in range(nr):
-    sec = self.get_segment(p + ( 80))
+    sec = self.get_segment(p + 80)
     self.sections.append(sec)
-      #print(f'-- cmd loa sec {i}: {sec}')
-      #print(f'-- cmd loa sec {i}: {sec}')
-      #print(f':::: {self.get_big(sec[2])}')
-      #print(f'-- cmd loa sec {i}: {sec}')
+    print(f'-- cmd loa sec : {sec}')
+    #print(f'-- cmd loa sec {i}: {sec}')
+    #print(f':::: {self.get_big(sec[2])}')
+    #print(f'-- cmd loa sec {i}: {sec}')
     pos, siz = int(f'{binascii.hexlify(self.get_big(sec[4])).decode()}', 16), int(f'{binascii.hexlify(self.get_big(sec[3])).decode()}', 16)
-    #print(f'----- cmd loa sec {i}: {pos} {siz}')
+    print(f'----- cmd loa sec  {pos} {siz}')
     self.sections_data.append(self.file[pos:pos + siz])
-      #print(f'----- cmd loa data {i}: {self.file[pos:pos + siz]}')
-      #xx = [j for j in (self.file[pos:pos + siz])]
-      #print(f':::: {self.get_big(self.file[pos:pos + siz])}')
+    #print(f'----- cmd loa data: {self.file[pos:pos + siz]}')
+    #xx = [j for j in (self.file[pos:pos + siz])]
+    #print(f':::: {self.get_big(self.file[pos:pos + siz])}')
     print(f'Opcode {sec[8]}: {self.opcodes(sec[8])}  -- {sec[9]}, {sec[10]} ,, {bin(int.from_bytes(sec[8]))}')
-      #for j in range(len(sec)): print(f'Opcode{i} {bin(int.from_bytes(sec[j]))[25:32]} - {bin(int.from_bytes(sec[j]))[::-1][23:30]}    : {bin(int.from_bytes(sec[j]))}')
+    #for j in range(len(sec)): print(f'Opcode{i} {bin(int.from_bytes(sec[j]))[25:32]} - {bin(int.from_bytes(sec[j]))[::-1][23:30]}    : {bin(int.from_bytes(sec[j]))}')
     return self.sections, self.sections_data
   def get_data(self) -> bytes:
     self.data = self.d
