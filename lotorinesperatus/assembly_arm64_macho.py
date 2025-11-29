@@ -29,9 +29,9 @@ class Arm64_macho:
   def get_lengths(self) -> Tuple:
     return 32, 72, 80                              # Lenght of header, loader, segment
   def get_header(self) -> List:                    # [::-1] for big endian
-    self.header.append(self.h[0:4])                # Magic number
-    self.header.append(self.h[4:8])                # CPU type
-    self.header.append(self.h[8:12])               # CPU subtype
+    self.header.append(self.h[ 0: 4])              # Magic number
+    self.header.append(self.h[ 4: 8])              # CPU type
+    self.header.append(self.h[ 8:12])              # CPU subtype
     self.header.append(self.h[12:16])              # Filetype
     self.header.append(self.h[16:20])              # Number of load commands
     self.header.append(self.h[20:24])              # Size of load commands
@@ -51,9 +51,9 @@ class Arm64_macho:
       p1, p2 = p2 + sz - 8, p2 + sz - 8 + 4
   def get_loader(self, c) -> List:
     self.loader = []
-    self.loader.append(self.c[c + 0:c + 4])        # Command type
-    self.loader.append(self.c[c + 4:c + 8])        # Command size
-    self.loader.append(self.c[c + 8:c + 24])       # Segment name
+    self.loader.append(self.c[c +  0:c +  4])      # Command type
+    self.loader.append(self.c[c +  4:c +  8])      # Command size
+    self.loader.append(self.c[c +  8:c + 24])      # Segment name
     self.loader.append(self.c[c + 24:c + 32])      # Address
     self.loader.append(self.c[c + 32:c + 40])      # Address size
     self.loader.append(self.c[c + 40:c + 48])      # File offset
@@ -65,7 +65,7 @@ class Arm64_macho:
     return self.loader
   def get_segment(self, c) -> List:
     self.segment = []
-    self.segment.append(self.c[c + 0:c + 16])      # Section name
+    self.segment.append(self.c[c +  0:c + 16])     # Section name
     self.segment.append(self.c[c + 16:c + 32])     # Segment name
     self.segment.append(self.c[c + 32:c + 40])     # Section address
     self.segment.append(self.c[c + 40:c + 48])     # Section size
@@ -78,7 +78,7 @@ class Arm64_macho:
     self.segment.append(self.c[c + 72:c + 76])     # Reserved2
     self.segment.append(self.c[c + 76:c + 80])     # Reserved3
     return self.segment
-  def inst(self, i) -> Literal:  # TODO: this isnt going to work, but its a start, more statements needed and some ands to avoid colliding
+  def inst(self, i) -> Literal:
     if   i[5:13] == '01001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
     elif i[5:13] == '10001000': return f'mov x{int(i[29:34], 2)}, sp'
     elif i[5:13] == '10000000': return f'adrp x{int(i[29:34], 2)}, 0'
@@ -93,18 +93,13 @@ class Arm64_macho:
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
-    # 0x460 = 1120
-    print(f'F01 {hex(int.from_bytes(self.file[1120:1124][::-1]))} {bin(int.from_bytes(self.file[1120:1124][::-1]))} {self.inst(bin(int.from_bytes(self.file[1120:1124][::-1])))}')
-    print(f'F02 {hex(int.from_bytes(self.file[1124:1128][::-1]))} {bin(int.from_bytes(self.file[1124:1128][::-1]))} {self.inst(bin(int.from_bytes(self.file[1124:1128][::-1])))}')
-    print(f'F03 {hex(int.from_bytes(self.file[1128:1132][::-1]))} {bin(int.from_bytes(self.file[1128:1132][::-1]))} {self.inst(bin(int.from_bytes(self.file[1128:1132][::-1])))}')
-    print(f'F04 {hex(int.from_bytes(self.file[1132:1136][::-1]))} {bin(int.from_bytes(self.file[1132:1136][::-1]))} {self.inst(bin(int.from_bytes(self.file[1132:1136][::-1])))}')
-    print(f'F05 {hex(int.from_bytes(self.file[1136:1140][::-1]))} {bin(int.from_bytes(self.file[1136:1140][::-1]))} {self.inst(bin(int.from_bytes(self.file[1136:1140][::-1])))}')
-    print(f'F06 {hex(int.from_bytes(self.file[1140:1144][::-1]))} {bin(int.from_bytes(self.file[1140:1144][::-1]))} {self.inst(bin(int.from_bytes(self.file[1140:1144][::-1])))}')
-    print(f'F07 {hex(int.from_bytes(self.file[1144:1148][::-1]))} {bin(int.from_bytes(self.file[1144:1148][::-1]))} {self.inst(bin(int.from_bytes(self.file[1144:1148][::-1])))}')
-    print(f'F08 {hex(int.from_bytes(self.file[1148:1152][::-1]))} {bin(int.from_bytes(self.file[1148:1152][::-1]))} {self.inst(bin(int.from_bytes(self.file[1148:1152][::-1])))}')
-    print(f'F09 {hex(int.from_bytes(self.file[1152:1156][::-1]))} {bin(int.from_bytes(self.file[1152:1156][::-1]))} {self.inst(bin(int.from_bytes(self.file[1152:1156][::-1])))}')
-    print(f'F10 {hex(int.from_bytes(self.file[1156:1160][::-1]))} {bin(int.from_bytes(self.file[1156:1160][::-1]))} {self.inst(bin(int.from_bytes(self.file[1156:1160][::-1])))}')
-    print(f'F11 {hex(int.from_bytes(self.file[1160:1164][::-1]))} {bin(int.from_bytes(self.file[1160:1164][::-1]))} {self.inst(bin(int.from_bytes(self.file[1160:1164][::-1])))}')
+    p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
+    i = 0  # TODO: does this actually work for other binaries?
+    while self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
+      print(f'F{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
+        f' {bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
+        f' {self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))}')
+      i+=4
     # stp : 0b10101001101111110111101111111101
     # mov : 0b10010001000000000000001111111101
     # adrp: 0b10010000000000000000000000000000
@@ -120,22 +115,16 @@ class Arm64_macho:
     # >>> bin(0x90000000) = '0b10010000000000000000000000000000' == adrp    x0, 0x100000000 <_puts+0x100000000>
     # see hex column from objdump output
     # TODO: figure out how to combine data into actual instructions
-    # TODO: use data from header to figure out where to start and many opcodes
   def get_sections(self, nr, p) -> List:
     sec = self.get_segment(p + 80)
     self.sections.append(sec)
     print(f'-- cmd loa sec : {sec}')
-    #print(f'-- cmd loa sec {i}: {sec}')
-    #print(f':::: {self.get_big(sec[2])}')
-    #print(f'-- cmd loa sec {i}: {sec}')
     pos, siz = int(f'{binascii.hexlify(self.get_big(sec[4])).decode()}', 16), int(f'{binascii.hexlify(self.get_big(sec[3])).decode()}', 16)
     print(f'----- cmd loa sec  {pos} {siz}')
     self.sections_data.append(self.file[pos:pos + siz])
-    #print(f'----- cmd loa data: {self.file[pos:pos + siz]}')
-    #xx = [j for j in (self.file[pos:pos + siz])]
-    #print(f':::: {self.get_big(self.file[pos:pos + siz])}')
     print(f'Opcode {sec[8]}: {self.opcodes(sec[8])}  -- {sec[9]}, {sec[10]} ,, {bin(int.from_bytes(sec[8]))}')
-    #for j in range(len(sec)): print(f'Opcode{i} {bin(int.from_bytes(sec[j]))[25:32]} - {bin(int.from_bytes(sec[j]))[::-1][23:30]}    : {bin(int.from_bytes(sec[j]))}')
+    for j in range(len(sec)): print(f'Opcode {bin(int.from_bytes(sec[j]))[25:32]} - {bin(int.from_bytes(sec[j]))[::-1][23:30]}    : {bin(int.from_bytes(sec[j]))}')
+    print("SL", self.header)
     return self.sections, self.sections_data
   def get_data(self) -> bytes:
     self.data = self.d
@@ -178,4 +167,3 @@ Disassembly of section __TEXT,__stubs:
 100000488: d61f0200    	br	x16
 
 """
-0b10010001000100100100000000000000
