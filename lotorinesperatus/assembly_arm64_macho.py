@@ -39,16 +39,14 @@ class Arm64_macho:
     self.header.append(self.h[28:32])              # Reserved. 64bit only
     return self.header
   def get_command(self) -> List:
-    p1, p2 = 0, 4
-    for i in range(int(f'{binascii.hexlify(self.get_big(self.h[16:20])).decode()}', 16)):
-      nr = self.get_big(self.c[p1:p2])
-      nrr, nsec = int(f'{binascii.hexlify(nr).decode()}', 16), 0
-      if (nrr == 25): #0x19, meaning it has sections
-        loa, s1 = self.get_loader(p1), p1 + 72  # 72 is the size of the loader
-        self.get_sections(int(f'{binascii.hexlify(self.get_big(loa[9])).decode()}', 16), s1)
-      p1, p2 = p1 + 4, p2 + 4
-      sz = int(f'{binascii.hexlify(self.get_big(self.c[p1:p2])).decode()}', 16)
-      p1, p2 = p2 + sz - 8, p2 + sz - 8 + 4
+    nr = self.get_big(self.c[0:4])
+    nrr, nsec, sec = int(f'{binascii.hexlify(nr).decode()}', 16), 0, []
+    if (nrr == 25): #0x19, meaning it has sections
+      loa, s1 = self.get_loader(0), 72  # 72 is the size of the loader
+      sec, sec1 = self.get_sections(int(f'{binascii.hexlify(self.get_big(loa[9])).decode()}', 16), s1)
+    sz = int(f'{binascii.hexlify(self.get_big(self.c[4:8])).decode()}', 16)
+    print("SZ", sz, sec[0])
+    return sec[0]
   def get_loader(self, c) -> List:
     self.loader = []
     self.loader.append(self.c[c +  0:c +  4])      # Command type
@@ -89,17 +87,19 @@ class Arm64_macho:
     elif i[5:13] == '10110010': return f'ret'
     elif i[5:13] == '11001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
     elif i[5:13] == '10110000': return f'br x{int(i[24:29], 2)}'
-  def opcodes(self, c) -> Literal:
+  def get_assembly(self) -> List:
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
-    i = 0  # TODO: does this actually work for other binaries?
+    i, op = 0, []  # TODO: does this actually work for other binaries?
     while self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
       print(f'F{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
         f' {bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
         f' {self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))}')
+      op.append(self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
       i+=4
+    return op
     # stp : 0b10101001101111110111101111111101
     # mov : 0b10010001000000000000001111111101
     # adrp: 0b10010000000000000000000000000000
@@ -116,19 +116,15 @@ class Arm64_macho:
     # see hex column from objdump output
     # TODO: figure out how to combine data into actual instructions
   def get_sections(self, nr, p) -> List:
-    sec = self.get_segment(p + 80)
-    self.sections.append(sec)
-    print(f'-- cmd loa sec : {sec}')
-    pos, siz = int(f'{binascii.hexlify(self.get_big(sec[4])).decode()}', 16), int(f'{binascii.hexlify(self.get_big(sec[3])).decode()}', 16)
-    print(f'----- cmd loa sec  {pos} {siz}')
+    self.sections = self.get_segment(p + 80)
+    pos, siz = int(f'{binascii.hexlify(self.get_big(self.sections[4])).decode()}', 16), int(f'{binascii.hexlify(self.get_big(self.sections[3])).decode()}', 16)
     self.sections_data.append(self.file[pos:pos + siz])
-    print(f'Opcode {sec[8]}: {self.opcodes(sec[8])}  -- {sec[9]}, {sec[10]} ,, {bin(int.from_bytes(sec[8]))}')
-    for j in range(len(sec)): print(f'Opcode {bin(int.from_bytes(sec[j]))[25:32]} - {bin(int.from_bytes(sec[j]))[::-1][23:30]}    : {bin(int.from_bytes(sec[j]))}')
-    print("SL", self.header)
     return self.sections, self.sections_data
   def get_data(self) -> bytes:
     self.data = self.d
     return self.data
+
+
 """
 $ otool -tvV ./hello_arm64_macho.bin
 ./hello_arm64_macho.bin:
