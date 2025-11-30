@@ -45,7 +45,6 @@ class Arm64_macho:
       loa, s1 = self.get_loader(0), 72  # 72 is the size of the loader
       sec, sec1 = self.get_sections(int(f'{binascii.hexlify(self.get_big(loa[9])).decode()}', 16), s1)
     sz = int(f'{binascii.hexlify(self.get_big(self.c[4:8])).decode()}', 16)
-    print("SZ", sz, sec[0])
     return sec[0]
   def get_loader(self, c) -> List:
     self.loader = []
@@ -76,7 +75,7 @@ class Arm64_macho:
     self.segment.append(self.c[c + 72:c + 76])     # Reserved2
     self.segment.append(self.c[c + 76:c + 80])     # Reserved3
     return self.segment
-  def inst(self, i) -> Literal:
+  def get_instructions(self, i) -> Literal:
     if   i[5:13] == '01001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
     elif i[5:13] == '10001000': return f'mov x{int(i[29:34], 2)}, sp'
     elif i[5:13] == '10000000': return f'adrp x{int(i[29:34], 2)}, 0'
@@ -92,14 +91,16 @@ class Arm64_macho:
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
-    i, op = 0, []  # TODO: does this actually work for other binaries?
-    while self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
+    i, ins, hx, bi = 0, [], [], []  # TODO: does this actually work for other binaries?
+    while self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
       print(f'F{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
         f' {bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
-        f' {self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))}')
-      op.append(self.inst(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))}')
+      ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
+      hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
+      bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
       i+=4
-    return op
+    return hx, bi, ins
     # stp : 0b10101001101111110111101111111101
     # mov : 0b10010001000000000000001111111101
     # adrp: 0b10010000000000000000000000000000
