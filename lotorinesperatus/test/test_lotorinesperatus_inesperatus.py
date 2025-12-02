@@ -2,7 +2,7 @@
 # Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
 # ------------------------------------------------------------------------------------------------------------------------------------------------- #
 from lotorinesperatus.assembly import Assembly
-import platform, curses, sys, os
+import platform, sys, os
 
 
 def read_arm_macho() -> None:
@@ -37,6 +37,7 @@ def read_amd_elf() -> None:
   [print(f'Header {amd.hex2str(amd_header[i])}') for i in range(len(amd_header))]
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
+  amd.asm.get_assembly()
   print('--- amd64 elf header ---')
 
 
