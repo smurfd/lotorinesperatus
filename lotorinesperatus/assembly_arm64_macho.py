@@ -91,7 +91,7 @@ class Arm64_macho:
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
-    i, ins, hx, bi = 0, [], [], []  # TODO: does this actually work for other binaries?
+    i, ins, hx, bi, b = 0, [], [], [], []  # TODO: does this actually work for other binaries?
     while self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
       print(f'F{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
         f' {bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
@@ -99,8 +99,9 @@ class Arm64_macho:
       ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
       hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
       bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
+      b.append(self.file[p + i:p + i + 4][::-1])
       i+=4
-    return hx, bi, ins
+    return hx, bi, ins, b
     # stp : 0b10101001101111110111101111111101
     # mov : 0b10010001000000000000001111111101
     # adrp: 0b10010000000000000000000000000000

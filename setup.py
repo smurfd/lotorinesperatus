@@ -14,7 +14,6 @@ setuptools.setup(
   url='https://github.com/smurfd/lotorinesperatus',
   license='MIT',
   python_requires='>=3.11',
-  require={'capstone'},
   extras_require={
     'testing': [
       'pytest',

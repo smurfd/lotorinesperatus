@@ -26,16 +26,17 @@ def test_lotorinesperatus_amd() -> None:
   assert(genl == ll)
   assert(genb == lb)
 def curses_lotorinesperatus(pth) -> None: curses.wrapper(LotorInesperatus(pth).cwin)
-def print_asm(pth) -> None:
-  l = LotorInesperatus(pth)
-  bind, _ = l.get_binary()
-  lb, ll = l.get_disassembly(bind)
-  Format().print(lb)
+#def print_asm(pth) -> None:
+#  l = LotorInesperatus(pth)
+#  bind, _ = l.get_binary()
+#  lb, ll = l.get_disassembly(bind)
+#  Format().print(lb)
 
 
 if __name__ == '__main__':
   if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
+    print("PTH", os.path.dirname(os.path.realpath(__file__)))
     curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor UI
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # Print arm asm (via capstone)
-  print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin')                    # Print amd asm (via capstone)
+  #print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # Print arm asm (via capstone)
+  #print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin')                    # Print amd asm (via capstone)
   print('OK')

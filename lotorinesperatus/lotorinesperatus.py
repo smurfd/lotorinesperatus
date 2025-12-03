@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 # Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
 # ------------------------------------------------------------------------------------------------------------------------------------------------- #
+from lotorinesperatus.assembly import Assembly
 from typing import List, Tuple
-import platform, subprocess, capstone, curses, sys, os
+import platform, subprocess, curses, sys, os
 
 
 class LotorInesperatus:
   def __init__(self, fn) -> None:
     self.chunks, self.disasm = [], []
     self.bin, self.fn, self.nr = b'', fn, 0
-    with open(self.fn, 'rb') as f:
-      self.bin = f.read()
-      self.nr = len(self.bin) // 4
+    #with open(self.fn, 'rb') as f:
+    #  self.bin = f.read()
+    #  self.nr = len(self.bin) // 4
   def get_binary(self) -> Tuple: return self.bin, len(self.bin)
-  def get_disassembly(self, code, test=False) -> Tuple:
-    if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
-    elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-    cs.skipdata, ret = True, ''
-    # TODO: this logic should be in format, but probably we skip capstone, so dont move for now
-    if test: [ret := ret + f'{ins.address:#08x}: {ins.mnemonic}\t{ins.op_str}\n' for ins in cs.disasm(code, 0)]
-    else: [ret := ret + f'{ins.address:#08x}|{ins.mnemonic+(" " * (5 - len(ins.mnemonic)))}|{"|".join(str(y) for y in ins.op_str.split(", "))}\n'
-      .replace('|', '\t') for ins in cs.disasm(code, 0)]
-    return ret, len(ret)
+  #def get_disassembly(self, code, test=False) -> Tuple:
+  #  if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
+  #  elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+  #  cs.skipdata, ret = True, ''
+  #  # TODO: this logic should be in format, but probably we skip capstone, so dont move for now
+  #  if test: [ret := ret + f'{ins.address:#08x}: {ins.mnemonic}\t{ins.op_str}\n' for ins in cs.disasm(code, 0)]
+  #  else: [ret := ret + f'{ins.address:#08x}|{ins.mnemonic+(" " * (5 - len(ins.mnemonic)))}|{"|".join(str(y) for y in ins.op_str.split(", "))}\n'
+  #    .replace('|', '\t') for ins in cs.disasm(code, 0)]
+  #  return ret, len(ret)
   def curses_setup(self, curses, stdscr) -> None:
     curses.noecho()
     curses.cbreak()
@@ -64,11 +65,18 @@ class LotorInesperatus:
     filled, prgstr = int(83 * progress / pmax), '{:03}'.format(progress * 100 // pmax)
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (83 - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
   def cwin(self, stdscr) -> None:
-    bind, binlen = self.get_binary()
-    asmdat, asmlen = self.get_disassembly(bind)
+    asm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/test/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
+    arm_header  = asm.asm.get_header()
+    arm_command = asm.asm.get_command()
+    arm_loader  = asm.asm.get_loader(0)
+    arm_segment = asm.asm.get_segment(80)
+    h, b, a, bb = asm.asm.get_assembly()
+    d = asm.asm.get_data()
+    asmdat, asmlen = a, len(a)
+    bind, binlen = b, len(b)
     self.curses_setup(curses, stdscr)
     try:
-      index, start, astart = 0, 0, 0
+      index, start, astart, stop, alen = 0, 0, 0, 0, 0
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
       while True:
@@ -81,23 +89,27 @@ class LotorInesperatus:
         infwin.border(0)
         hexwin.border(0)
         diswin.border(0)
-        if binlen < 11: blen = binlen
+        if len(d) < 11: blen = len(d)
         else: blen = 10
         for i in range(start + 1, start + blen):
           s0 = []
           for j in range(7):
-            s0.append('0x{:08x}'.format(bind[((i * 4) - 4) + j]))
+            #s0.append('0x{:08x}'.format(d[((i * 4) - 4) + j]))
             hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
-            hexwin.addstr(i - start, blen + ((blen + 1) * j), s0[j])
-        infwin.addstr(1, 1, '0x{:08x}'.format(bind[(start * 4)]))
+            #s0.append('{:08x}'.format(d[i])) #f'{d[i]}')
+            #s0.append(d[start * 4])
+            #s0.append(h[0])
+            #hexwin.addstr(i - start, len(b) + ((len(b) + 1) * j), s0[j])
+        #infwin.addstr(1, 1, '0x{:08x}'.format(len(h)))
+        #infwin.addstr(1, 1, '0x{:08x}'.format(h[(start * 4)]))
         stdscr.addstr(0, 0, f'Iteration [{str(index)}] :: {start} / {self.nr}')
         s1 = []
         if asmlen < 11: alen = asmlen
         else: alen = 10
         for i in range(astart + 0, astart + alen):
-          s1.append(asmdat.splitlines()[i])
+          s1.append(asmdat[i])
           diswin.addstr(i - astart, 1, s1[i - astart])
-        self.curses_progress(curses, stdscr, start, self.nr)
+        #self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
         start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, binlen, asmlen - 10)
         if stop: break
