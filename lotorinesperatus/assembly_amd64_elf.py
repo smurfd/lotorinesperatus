@@ -71,18 +71,39 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def get_instructions(self, i) -> Literal:
-    if   i[5:14] == '111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
-    elif i[5:14] == '111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
-    elif i[5:14] == '100011111': return f'nopl (%rax)'
+    if i[5:14]:
+      if   i[5:14] == '100010000' and i[17:25] == '11101100': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
+      elif i[5:14] == '100010000' and i[17:25] == '11000100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
+      elif i[5:14] == '000110000': return f'retq'
+      elif i[5:14] == '111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
+      elif i[5:14] == '111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
+      elif i[5:14] == '100011111': return f'nopl (%rax)'
+      elif i[5:14] == '100000000': return f'pushq ${hex(int(i[18:26], 2))}'
+      elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>' #  *{hex(int(i[18:30], 2))}' # TODO: fix
   def get_assembly(self) -> List:
     p = 1192  # 1192 = 0x4004a8 - 0x4a8
     i, ins, hx, bi = 0, [], [], []  # TODO: does this actually work for other binaries?
-    #while self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
-    for i in range(0, 13, 4):
+    for i in range(0, 12, 4):
       print(f'FB{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4]))}'\
         f' {bin(int.from_bytes(self.file[p + i:p + i + 4]))}'\
         f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4])))}')
-    for i in range(14, 35, 5):
+    for i in range(24, 39, 5):
+      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
+    for i in range(39, 54, 5):
+      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
+    for i in range(56, 71, 5):
+      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
+    for i in range(72, 87, 5):
+      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
+    for i in range(88, 103, 5):
       print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
         f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
         f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
@@ -90,7 +111,6 @@ class Amd64_elf:
       #hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
       #bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
       #i+=4
-    print("Fl", len(self.file))
     return hx, bi, ins
 
 """
