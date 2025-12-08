@@ -82,35 +82,36 @@ class Amd64_elf:
       elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>' #  *{hex(int(i[18:30], 2))}' # TODO: fix
   def get_assembly(self) -> List:
     p = 1192  # 1192 = 0x4004a8 - 0x4a8
-    i, ins, hx, bi = 0, [], [], []  # TODO: does this actually work for other binaries?
-    for i in range(0, 12, 4):
-      print(f'FB{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 4]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4])))}')
-    for i in range(24, 39, 5):
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
-    for i in range(39, 54, 5):
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
-    for i in range(56, 71, 5):
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
-    for i in range(72, 87, 5):
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
-    for i in range(88, 103, 5):
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 5]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 5])))}')
-      #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
-      #hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-      #bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-      #i+=4
+    i, ins, hx, bi = 0, [], [], []
+    # TODO: how do we get this without doing it manually?!!
+    #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
+    #hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
+    #bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
+    #i+=4
+    x = [4, 4, 1, # TODO how to get these programmaticly
+         6, 6, 4,
+         6, 5, 5,
+         6, 5, 5,
+         6, 5, 5,
+         6, 5, 5,
+         1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, 2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,
+         5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 14,
+         1, 3, 1, 1, 5, 7, 2, 5, 3, 4, 2, 14, 3, 2, 8, 4, 2, 2, 2, 4, 1, 1, 5, 1, 1, 10, 2,
+         7, 7, 3, 2, 7, 3, 2, 2, 7, 1, 7,
+         7, 7, 3, 3, 4, 4, 3, 3, 2, 7, 3, 2, 2, 6, 1, 7,
+         7, 2, 1, 3, 5, 7, 1, 1, 5, 1, 11, 4,
+         2,
+         1, 3, 5, 5, 5, 1, 1, 1,
+         4, 4, 1]
+    co = 0
+    for j, i in enumerate(x):
+      if j == 3: co = 24
+      if j == 85: co += 3
+      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + co:p + co + i]))}'\
+        f' {bin(int.from_bytes(self.file[p + co:p + co + i]))}'\
+        f' {self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i])))}')
+      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n') # TODO: check that these numbers look right
+      co += i
     return hx, bi, ins
 
 """
