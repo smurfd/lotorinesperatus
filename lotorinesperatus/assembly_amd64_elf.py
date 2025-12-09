@@ -74,12 +74,14 @@ class Amd64_elf:
     if i[5:14]:
       if   i[5:14] == '100010000' and i[17:25] == '11101100': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
       elif i[5:14] == '100010000' and i[17:25] == '11000100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
-      elif i[5:14] == '000110000': return f'retq'
+      elif i[2:10] == '11000011': return f'retq'
       elif i[5:14] == '111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
       elif i[5:14] == '111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
       elif i[5:14] == '100011111': return f'nopl (%rax)'
-      elif i[5:14] == '100000000': return f'pushq ${hex(int(i[18:26], 2))}'
-      elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>' #  *{hex(int(i[18:30], 2))}' # TODO: fix
+      elif i[5:14] == '100000000': return f'pushq ${hex(int(i[15:17], 2))}'
+      elif i[2:9]  == '1010101': return f'pushq %rbp'
+      elif i[8:15]  == '1010101': return f'pushq %r{12+int(i[15:17])}'
+      elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>'  # TODO: fix
   def get_assembly(self) -> List:
     p = 1192  # 1192 = 0x4004a8 - 0x4a8
     i, ins, hx, bi = 0, [], [], []
@@ -110,7 +112,7 @@ class Amd64_elf:
       print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + co:p + co + i]))}'\
         f' {bin(int.from_bytes(self.file[p + co:p + co + i]))}'\
         f' {self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i])))}')
-      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n') # TODO: check that these numbers look right
+      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')
       co += i
     return hx, bi, ins
 
