@@ -20,8 +20,8 @@ def read_arm_macho() -> None:
   [print(f'Header {arm.hex2str(arm_header[i])}') for i in range(len(arm_header))]
   [print(f'Loader {arm.hex2str(arm_loader[i])}') for i in range(len(arm_loader))]
   [print(f'Segment {arm.hex2str(arm_segment[i])}') for i in range(len(arm_segment))]
-  h, b, a = arm.asm.get_assembly()
-  [print(f'Arm Asm: {h[i]} {b[i]} {a[i]}') for i in range(len(h))]
+  h, bi, a, b = arm.asm.get_assembly()
+  [print(f'Arm Asm: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('--- arm64 macho header ---')
 def read_amd_elf() -> None:
   print('--- amd64 elf header ---')
