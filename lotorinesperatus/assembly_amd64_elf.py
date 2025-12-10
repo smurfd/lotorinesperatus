@@ -80,8 +80,13 @@ class Amd64_elf:
       elif i[5:14] == '100011111': return f'nopl (%rax)'
       elif i[5:14] == '100000000': return f'pushq ${hex(int(i[15:17], 2))}'
       elif i[2:9]  == '1010101': return f'pushq %rbp'
-      elif i[8:15]  == '1010101': return f'pushq %r{12+int(i[15:17])}'
+      elif i[8:15] == '1010101': return f'pushq %r{12+int(i[15:17])}'
       elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>'  # TODO: fix
+      elif i[2:18] == '1111111111100000': return f'jmpq *%rax'
+      elif i[2:17] == '111010100010111': return f'jne 0x400xxx'
+      elif i[2:17] == '111010000001000': return f'je 0x400xxx'
+      elif i[2:10] == '10010000': return f'nop'
+      elif i[2:10] == '11001100': return f'int3'
   def get_assembly(self) -> List:
     p = 1192  # 1192 = 0x4004a8 - 0x4a8
     i, ins, hx, bi = 0, [], [], []
