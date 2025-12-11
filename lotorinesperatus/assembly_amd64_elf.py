@@ -71,54 +71,61 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def get_instructions(self, i) -> Literal:
-    if i[5:14]:
+    if i[5:14]:  # TODO: check same positions and length?
       if   i[5:14] == '100010000' and i[17:25] == '11101100': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
       elif i[5:14] == '100010000' and i[17:25] == '11000100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
       elif i[2:10] == '11000011': return f'retq'
       elif i[5:14] == '111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
       elif i[5:14] == '111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
+      elif i[2:11] == '110001100': return f'movb {hex(int(i[15:16], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
+      elif i[2:15] == '1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
       elif i[5:14] == '100011111': return f'nopl (%rax)'
       elif i[5:14] == '100000000': return f'pushq ${hex(int(i[15:17], 2))}'
       elif i[2:9]  == '1010101': return f'pushq %rbp'
-      elif i[8:15] == '1010101': return f'pushq %r{12+int(i[15:17])}'
+      elif i[8:15] == '1010101': return f'pushq %r{12+int(i[15:17], 2)}'
+      elif i[8:15] == '1010111': return f'popq %r{12+int(i[15:17], 2)}'
       elif i[5:11] == '010011': return f'jmp 0x4004c0 <.plt>'  # TODO: fix
+      elif i[2:9]  == '1011100': return f'movl {hex(int(i[29:34], 2))}, %eax'
+      elif i[2:11] == '111010111': return f'jmp 0x400xxx'
       elif i[2:18] == '1111111111100000': return f'jmpq *%rax'
       elif i[2:17] == '111010100010111': return f'jne 0x400xxx'
       elif i[2:17] == '111010000001000': return f'je 0x400xxx'
+      elif i[2:10] == '11101000': return f'callq 0x400xxx'
+      elif i[2:14] == '100100010001': return f'movq %rsp, %rbp'
+      elif i[2:9]  == '1011101': return f'popq %rpb'
       elif i[2:10] == '10010000': return f'nop'
       elif i[2:10] == '11001100': return f'int3'
   def get_assembly(self) -> List:
-    p = 1192  # 1192 = 0x4004a8 - 0x4a8
-    i, ins, hx, bi = 0, [], [], []
-    # TODO: how do we get this without doing it manually?!!
+    i, ins, hx, bi, co, p = 0, [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
     #hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
     #bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-    #i+=4
-    x = [4, 4, 1, # TODO how to get these programmaticly
-         6, 6, 4,
-         6, 5, 5,
-         6, 5, 5,
-         6, 5, 5,
-         6, 5, 5,
-         1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, 2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,
-         5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 14,
-         1, 3, 1, 1, 5, 7, 2, 5, 3, 4, 2, 14, 3, 2, 8, 4, 2, 2, 2, 4, 1, 1, 5, 1, 1, 10, 2,
-         7, 7, 3, 2, 7, 3, 2, 2, 7, 1, 7,
-         7, 7, 3, 3, 4, 4, 3, 3, 2, 7, 3, 2, 2, 6, 1, 7,
-         7, 2, 1, 3, 5, 7, 1, 1, 5, 1, 11, 4,
-         2,
-         1, 3, 5, 5, 5, 1, 1, 1,
-         4, 4, 1]
-    co = 0
-    for j, i in enumerate(x):
-      if j == 3: co = 24
-      if j == 85: co += 3
-      print(f'FB{i//5:02} {hex(int.from_bytes(self.file[p + co:p + co + i]))}'\
+    op_bytes = [
+      4, 4, 1, # TODO how to get these programmaticly
+      6, 6, 4,
+      6, 5, 5,
+      6, 5, 5,
+      6, 5, 5,
+      6, 5, 5,
+      1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, # belong to below
+        2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,        #
+      5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2,    # belong to below
+        2, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 14,                    #
+      1, 3, 1, 1, 5, 7, 2, 5, 3, 4, 2, 14, 3, 2, 8, 4, 2, 2, 2, 4, 1, 1, 5, 1, 1, 10, 2,
+      7, 7, 3, 2, 7, 3, 2, 2, 7, 1, 7,
+      7, 7, 3, 3, 4, 4, 3, 3, 2, 7, 3, 2, 2, 6, 1, 7,
+      7, 2, 1, 3, 5, 7, 1, 1, 5, 1, 11, 4,
+      2,
+      1, 3, 5, 5, 5, 1, 1, 1,
+      4, 4, 1]
+    for j, i in enumerate(op_bytes):
+      print(f'{hex(int.from_bytes(self.file[p + co:p + co + i]))}'\
         f' {bin(int.from_bytes(self.file[p + co:p + co + i]))}'\
         f' {self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i])))}')
-      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')
       co += i
+      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')  # to get a new line between sections
+      if j == 2: co = 24
+      if j == 84: co += 3
     return hx, bi, ins
 
 """
