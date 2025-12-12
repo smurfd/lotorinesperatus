@@ -80,6 +80,7 @@ class Amd64_elf:
       elif i[2:11] == '110001100': return f'movb {hex(int(i[15:16], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
       elif i[2:15] == '1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
       elif i[5:14] == '100011111': return f'nopl (%rax)'
+      elif i[2:15] == '1001000000000': return f'addq  %rax, %rsi'
       elif i[5:14] == '100000000': return f'pushq ${hex(int(i[15:17], 2))}'
       elif i[2:9]  == '1010101': return f'pushq %rbp'
       elif i[8:15] == '1010101': return f'pushq %r{12+int(i[15:17], 2)}'
@@ -89,12 +90,23 @@ class Amd64_elf:
       elif i[2:11] == '111010111': return f'jmp 0x400xxx'
       elif i[2:18] == '1111111111100000': return f'jmpq *%rax'
       elif i[2:17] == '111010100010111': return f'jne 0x400xxx'
-      elif i[2:17] == '111010000001000': return f'je 0x400xxx'
+      elif i[2:12] == '1110100000': return f'je 0x400xxx'
       elif i[2:10] == '11101000': return f'callq 0x400xxx'
+      elif i[2:14] == '100100000000': return f'addq  %rax, %rsi'
+      elif i[2:15] == '1001000001010': return f'subq  %rdi, %rsi'
+      elif i[2:15] == '1001000100011': return f'leaq  {hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip), %rdi'  # TODO: wrong hex
+      elif i[2:21] == '1001000110000011110': return 'shrq  $0x3f, %rsi'
+      elif i[2:21] == '1001000110000011111': return 'sarq  $0x3, %rax'
+      elif i[2:16] == '10010001101000': return 'sarq  %rsi'
       elif i[2:14] == '100100010001': return f'movq %rsp, %rbp'
+      elif i[2:14] == '100100010000': return f'testq %rax, %rax'
+      elif i[2:14] == '100100010110': return f'sarq  %rsi'
       elif i[2:9]  == '1011101': return f'popq %rpb'
+      elif i[2:14] == '100100000111': return f'subq  %rdi, %rsi'
       elif i[2:10] == '10010000': return f'nop'
-      elif i[2:10] == '11001100': return f'int3'
+      elif i[2:12] == '1100110000': return f'nopw  (%rax,%rax)'
+      elif i[2:12] == '1100110011': return f'nopw  %cs:(%rax,%rax)'
+      elif i[2:10] == '11001100': return f'int3'  # needs to be below above
   def get_assembly(self) -> List:
     i, ins, hx, bi, co, p = 0, [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
