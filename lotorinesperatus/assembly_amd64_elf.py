@@ -95,6 +95,10 @@ class Amd64_elf:
       elif i[2:14] == '100010110000': return f'testl %r15d, %r15d'
       elif i[2:14] == '100001011100': return f'testl %ecx, %ecx'
       elif i[2:14] == '111010001101': return f'callq 0x400xxx'
+      elif i[2:14] == '100010011100': return f'movl %eax, %edi'
+      elif i[2:16] == '10010001000001': return f'addq $0x10, %rbx'
+      elif i[2:12] == '1110100001': return f'je 0x400xxx'
+
       elif i[5:14] == '100010000' and i[17:25] == '11101100': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
       elif i[5:14] == '100010000' and i[17:25] == '11000100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
       elif i[2:10] == '11000011': return f'retq'
@@ -116,7 +120,7 @@ class Amd64_elf:
       elif i[2:14] == '101111110001': return f'movl $0x401xxx, %edi'
       elif i[2:14] == '100000110111': return f'movl $0x401xxx, %r12d'
       elif i[2:9]  == '1011100': return f'movl {hex(int(i[29:34], 2))}, %eax'
-      elif i[2:10] == '11101011': return f'jmp 0x400xxx'
+      elif i[2:12] == '1110101111': return f'jmp 0x400xxx'
       elif i[2:18] == '1111111111100000': return f'jmpq *%rax'
       elif i[2:17] == '111010100010111': return f'jne 0x400xxx'
       elif i[2:11] == '111010001': return f'je 0x400xxx'
@@ -145,6 +149,7 @@ class Amd64_elf:
       elif i[2:12] == '1100110000': return f'nopw (%rax,%rax)'
       elif i[2:12] == '1100110011': return f'nopw %cs:(%rax,%rax)'
       elif i[2:10] == '11001100': return f'int3'  # needs to be below above
+      elif i[2:9]  == '1110101': return f'jne 0x400xxx'
   def get_assembly(self) -> List:
     i, ins, hx, bi, co, p = 0, [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
