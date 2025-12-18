@@ -71,9 +71,9 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def get_instructions(self, i) -> Literal:
-    if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r12'
-    elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r12'
-    elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r12'
+    if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
+    elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
+    elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
     elif i[:22] == '0b10010001000110100000': return f'leaq {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip), %rdi'
     elif i[:21] == '0b1001000100000111110': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
@@ -93,7 +93,7 @@ class Amd64_elf:
     elif i[:16] == '0b10000011111110': return f'cmpl ${hex(int(i[20:26], 2))}, %ecx'
     elif i[:16] == '0b10000011111111': return f'callq *x{int(i[28:33], 2):x}(%r13)'
     elif i[:16] == '0b10010001000001': return f'addq {hex(int(i[28:33], 2))}, %rbx' # TODO check addq
-    elif i[:16] == '0b10010001101000': return 'sarq %rsi'
+    elif i[:16] == '0b10010001101000': return f'sarq %rsi'
     elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), %rax'
     elif i[:15] == '0b1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
     elif i[:15] == '0b1001000001010': return f'subq %rdi, %rsi'
@@ -137,7 +137,7 @@ class Amd64_elf:
     elif i[:12] == '0b1111111111': return f'callq *%rax'
     elif i[:12] == '0b1110010111': return f'jb 0x400xxx'
     elif i[:12] == '0b1100011100': return f'xorl %ecx, %ecx'
-    elif i[:12] == '0b1111110001': return f'jle  0x400xxx'
+    elif i[:12] == '0b1111110001': return f'jle 0x400xxx'
     elif i[:12] == '0b1110010000': return f'jb 0x400xxx'
     elif i[:12] == '0b1110100001': return f'je 0x400xxx'
     elif i[:12] == '0b1100110001': return f'nopw (%rax,%rax)'
