@@ -102,21 +102,6 @@ class Arm64_macho:
       b.append(self.file[p + i:p + i + 4][::-1])
       i+=4
     return hx, bi, ins, b
-    # stp : 0b10101001101111110111101111111101
-    # mov : 0b10010001000000000000001111111101
-    # adrp: 0b10010000000000000000000000000000
-    # add : 0b10010001000100100100000000000000
-    # bl  : 0b10010100000000000000000000000100
-    # mov : 0b1010010100000000000000000000000
-    # ldp : 0b10101000110000010111101111111101
-    # ret : 0b11010110010111110000001111000000
-
-    # adrp: 0b10010000000000000000000000110000
-    # ldr : 0b11111001010000000000001000010000
-    # br  : 0b11010110000111110000001000000000
-    # >>> bin(0x90000000) = '0b10010000000000000000000000000000' == adrp    x0, 0x100000000 <_puts+0x100000000>
-    # see hex column from objdump output
-    # TODO: figure out how to combine data into actual instructions
   def get_sections(self, nr, p) -> List:
     self.sections = self.get_segment(p + 80)
     pos, siz = int(f'{binascii.hexlify(self.get_big(self.sections[4])).decode()}', 16), int(f'{binascii.hexlify(self.get_big(self.sections[3])).decode()}', 16)

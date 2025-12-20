@@ -13,14 +13,9 @@ class Amd64_elf:
     with open(self.fn, 'rb') as f:
       self.file = f.read(); p1, p2 = 0, hl
       self.h = self.file[p1:p2]; p1, p2 = hl, hl + ll  #hl + int(f'{binascii.hexlify(self.get_big(self.h[20:24])).decode()}', 16)
-      #self.c = self.file[p1:p2]; p1, p2 = p2, p2 + sl
       self.p = self.file[p1:p2]; p1, p2 = p2, p2 + sl + 3
       self.s = self.file[p1:p2]
       self.d = self.file[p2:]
-
-    #self.header, self.proghd, self.secthd, self.data, self.fn = [], [], [], [], fn
-    #hl, ll, sl = self.get_lengths()
-    #with open(self.fn, 'rb') as f: self.h, self.p, self.s, _, self.d = f.read(hl), f.read(ll), f.read(sl), f.read(3), f.read()
   def get_lengths(self) -> Tuple:
     return 64, 72, 65                              # Length of header, proghd, secthd
   def get_header(self) -> List:                    # [::-1] for big endian
@@ -71,12 +66,12 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def get_instructions(self, i) -> Literal:
-    if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
-    elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
-    elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'#12'
+    if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
+    elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
+    elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:22] == '0b10010001000110100000': return f'leaq {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip), %rdi'
     elif i[:21] == '0b1001000100000111110': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
-    elif i[:21] == '0b1001000100000111100': return f'addq ${hex(int(i[29:34], 2))}, %rsp'
+    elif i[:21] == '0b1001000100000111100': return f'addq ${hex(int(i[28:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111111': return f'cmpq ${hex(int(i[29:34], 2))}, %rax'
     elif i[:21] == '0b1001000110000011110': return f'shrq ${hex(int(i[27:34], 2))}, %rsi'
     elif i[:21] == '0b1001000110000011111': return f'sarq ${hex(int(i[29:34], 2))}, %rax'
@@ -86,13 +81,14 @@ class Amd64_elf:
     elif i[:20] == '0b100100111111111110': return f'incq %r13'
     elif i[:20] == '0b100110100111001111': return f'cmpq %r13, %r12'
     elif i[:19] == '0b10010010010100111': return f'subq %rax, %r12'
+    elif i[:18] == '0b1001000100000110': return f'cmpq {hex(int(i[41:46], 2))}, {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip)'
     elif i[:18] == '0b1111111111100000': return f'jmpq *%rax'
     elif i[:17] == '0b111010100010111': return f'jne 0x400xxx'
-    elif i[:17] == '0b100100110000011': return f'addq ${hex(int(i[29:34], 2))}, %r14'
+    elif i[:17] == '0b100100110000011': return f'addq ${hex(int(i[28:34], 2))}, %r14'
     elif i[:16] == '0b10010001000000': return f'cmpq $0x401xxx, %rbx'
     elif i[:16] == '0b10000011111110': return f'cmpl ${hex(int(i[20:26], 2))}, %ecx'
     elif i[:16] == '0b10000011111111': return f'callq *x{int(i[28:33], 2):x}(%r13)'
-    elif i[:16] == '0b10010001000001': return f'addq {hex(int(i[28:33], 2))}, %rbx' # TODO check addq
+    elif i[:16] == '0b10010001000001': return f'addq {hex(int(i[28:33], 2))}, %rbx'
     elif i[:16] == '0b10010001101000': return f'sarq %rsi'
     elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), %rax'
     elif i[:15] == '0b1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'

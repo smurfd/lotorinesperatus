@@ -37,6 +37,4 @@ if __name__ == '__main__':
   if len(sys.argv) >= 2 and sys.argv[1] == 'gui':
     print("PTH", os.path.dirname(os.path.realpath(__file__)))
     curses_lotorinesperatus(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')  # Cursor UI
-  #print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin')                  # Print arm asm (via capstone)
-  #print_asm(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin')                    # Print amd asm (via capstone)
   print('OK')
