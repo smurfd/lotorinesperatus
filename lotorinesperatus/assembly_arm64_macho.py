@@ -23,8 +23,8 @@ class Arm64_macho:
       self.h = self.file[p1:p2]; p1, p2 = hl, hl + int(f'{binascii.hexlify(self.get_big(self.h[20:24])).decode()}', 16)
       self.c = self.file[p1:p2]; p1, p2 = p2, p2 + ll
       self.l = self.file[p1:p2]; p1, p2 = p2, p2 + sl
-      self.s = self.file[p1:p2]
-      self.d = self.file[p2:]
+      self.s = self.file[p1:p2]; p1, p2 = p2, p2
+      self.d = self.file[p1:]
   def get_big(self, s) -> List: return s[::-1]
   def get_lengths(self) -> Tuple:
     return 32, 72, 80                              # Lenght of header, loader, segment

@@ -10,9 +10,9 @@ class LotorInesperatus:
   def __init__(self, fn) -> None:
     self.chunks, self.disasm = [], []
     self.bin, self.fn, self.nr = b'', fn, 0
-    #with open(self.fn, 'rb') as f:
-    #  self.bin = f.read()
-    #  self.nr = len(self.bin) // 4
+    with open(self.fn, 'rb') as f:
+      self.bin = f.read()
+      self.nr = len(self.bin) // 4
   def get_binary(self) -> Tuple: return self.bin, len(self.bin)
   #def get_disassembly(self, code, test=False) -> Tuple:
   #  if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
@@ -66,39 +66,43 @@ class LotorInesperatus:
     stdscr.addstr(2, 3, '[' + '-' * filled + ' ' * (83 - filled) + ']' +  f' {prgstr}%', curses.color_pair(3))
   def cwin(self, stdscr) -> None:
     asm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/test/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
-    arm_header  = asm.asm.get_header()
-    arm_command = asm.asm.get_command()
-    arm_loader  = asm.asm.get_loader(0)
-    arm_segment = asm.asm.get_segment(80)
+    arm_header, arm_command, arm_loader, arm_segment = asm.asm.get_header(), asm.asm.get_command(), asm.asm.get_loader(0), asm.asm.get_segment(80)
     h, b, a, bb = asm.asm.get_assembly()
-    d = asm.asm.get_data()
-    asmdat, asmlen = a, len(a)
-    bind, binlen = b, len(b)
+    d = asm.asm.d #asm.asm.get_data()
+    asmdat, asmlen, bind, binlen = a, len(a), b, len(b)
     self.curses_setup(curses, stdscr)
+    if len(d) < 11: blen = len(d)
+    elif len(d) == 0: blen = 10
+    else: blen = 10
     try:
       index, start, astart, stop, alen = 0, 0, 0, 0, 0
       stdscr.addstr(curses.LINES - 1, 0, 'Press Q to quit, any other key to alternate')
       stdscr.refresh()
       while True:
-        hexwin = curses.newwin(10, 90, 3, 3) # hight, width, starty, startx
-        infwin = curses.newwin(10, 12, 14, 3)
-        diswin = curses.newwin(30, 77, 14, 16)
+        hexwin, infwin, diswin = curses.newwin(10, 90, 3, 3), curses.newwin(10, 12, 14, 3), curses.newwin(30, 77, 14, 16)  # h, w, y, x
         infwin.bkgd(' ', curses.color_pair(1))
         hexwin.bkgd(' ', curses.color_pair(2))
         diswin.bkgd(' ', curses.color_pair(2))
         infwin.border(0)
         hexwin.border(0)
         diswin.border(0)
-        if len(d) < 11: blen = len(d)
-        else: blen = 10
+        #if len(d) < 11: blen = len(d)
+        #elif len(d) == 0: blen = 10
+        #else: blen = 10
         for i in range(start + 1, start + blen):
           s0 = []
-          for j in range(7):
-            #s0.append('0x{:08x}'.format(d[((i * 4) - 4) + j]))
-            hexwin.addstr(i - start, 2, '0x{:04x}'.format(i))
-            #s0.append('{:08x}'.format(d[i])) #f'{d[i]}')
-            #s0.append(d[start * 4])
+          for j in range(2):
+            s0.append('0x{:08x}'.format(d[((i * 4) - 4) + j]))
+            hexwin.addstr(i - start, 3, '0x{:04x}'.format(i))
+            s0.append('{:08x}'.format(d[i])) #f'{d[i]}')
+            s0.append(d[start * 4])
             #s0.append(h[0])
+            #hexwin.addstr(i - start, 0, str(blen))
+            #hexwin.addstr(i - start, 9, str(j))
+            #hexwin.addstr(i - start, 12, str(len(asm.asm.file)))
+            #hexwin.addstr(i - start, 18, str(len(asm.asm.d)))
+            #hexwin.addstr(i - start, 25, str(len(asm.asm.data)))
+            hexwin.addstr(i - start, blen + ((blen + 1) * j), s0[j])
             #hexwin.addstr(i - start, len(b) + ((len(b) + 1) * j), s0[j])
         #infwin.addstr(1, 1, '0x{:08x}'.format(len(h)))
         #infwin.addstr(1, 1, '0x{:08x}'.format(h[(start * 4)]))
@@ -109,10 +113,11 @@ class LotorInesperatus:
         for i in range(astart + 0, astart + alen):
           s1.append(asmdat[i])
           diswin.addstr(i - astart, 1, s1[i - astart])
-        #self.curses_progress(curses, stdscr, start, self.nr)
+        self.curses_progress(curses, stdscr, start, self.nr)
         self.curses_refresh(infwin, hexwin, diswin, stdscr)
         start, stop, index, astart = self.curses_keymanage(curses, stdscr, start, astart, index, binlen, asmlen - 10)
         if stop: break
         index += 1
     except Exception as err: print(f'Got error(s) [{str(err)}]')
     self.curses_teardown(curses, stdscr)
+    # TODO: return value to figure out
