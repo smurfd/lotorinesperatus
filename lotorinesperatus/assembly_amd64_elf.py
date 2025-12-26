@@ -70,6 +70,8 @@ class Amd64_elf:
     elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:22] == '0b10010001000110100000': return f'leaq {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip), %rdi'
+    elif i[:22] == '0b10010001111111111001': return f'decq %rbx'
+    elif i[:22] == '0b10010001111111111000': return f'incq %rax'
     elif i[:21] == '0b1001000100000111110': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111100': return f'addq ${hex(int(i[28:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111111': return f'cmpq ${hex(int(i[29:34], 2))}, %rax'
@@ -84,19 +86,34 @@ class Amd64_elf:
     elif i[:18] == '0b1001000100000110': return f'cmpq {hex(int(i[41:46], 2))}, {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip)'
     elif i[:18] == '0b1111111111100000': return f'jmpq *%rax'
     elif i[:17] == '0b111010100010111': return f'jne 0x400xxx'
+    elif i[:17] == '0b111010000111111': return f'callq 0x400xxx <>'
+    elif i[:17] == '0b111010000000000': return f'callq 0x400xxx <'
     elif i[:17] == '0b100100110000011': return f'addq ${hex(int(i[28:34], 2))}, %r14'
     elif i[:16] == '0b10010001000000': return f'cmpq $0x401xxx, %rbx'
     elif i[:16] == '0b10000011111110': return f'cmpl ${hex(int(i[20:26], 2))}, %ecx'
     elif i[:16] == '0b10000011111111': return f'callq *x{int(i[28:33], 2):x}(%r13)'
     elif i[:16] == '0b10010001000001': return f'addq {hex(int(i[28:33], 2))}, %rbx'
+    elif i[:16] == '0b11101000100001': return f'callq 0x400xxx <'
+    elif i[:16] == '0b1110100111000': return f'jmp 0x400xxx <'
+    elif i[:16] == '0b1110100111010': return f'jmp 0x400xxx <'
+    elif i[:16] == '0b1110100111011': return f'je 0x400xxx <'
+    elif i[:16] == '0b10111111001100': return f'movl $0x401xxx, %edi'
+    elif i[:16] == '0b11101000110000': return f'callq 0x400xxx'
     elif i[:16] == '0b10010001101000': return f'sarq %rsi'
     elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), %rax'
     elif i[:15] == '0b1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
     elif i[:15] == '0b1001000001010': return f'subq %rdi, %rsi'
     elif i[:15] == '0b1001000000000': return f'addq %rax, %rsi'
+    elif i[:15] == '0b1110100000001': return f'callq 0x400xxx <'
     elif i[:15] == '0b1000001010101': return f'pushq %r{12+int(i[15:17], 2)}'
     elif i[:15] == '0b1000001010111': return f'popq %r{12+int(i[15:17], 2)}'
     elif i[:15] == '0b0010001000001': return f'cmpq ${hex(int(i[29:34], 2))}, %rax'
+    elif i[:15] == '0b1110101111100': return f'jne 0x400xxx <'
+    elif i[:15] == '0b1110101110001': return f'jne 0x400xxx <'
+    elif i[:14] == '0b111010001110': return f'callq 0x400xxx <'
+    elif i[:14] == '0b111010000001': return f'callq 0x400xxx <'
+    elif i[:14] == '0b111010000010': return f'callq 0x400xxx <'
+    elif i[:14] == '0b111010111011': return f'jmp 0x400xxx <'
     elif i[:14] == '0b111111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
     elif i[:14] == '0b101111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
     elif i[:14] == '0b111111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
@@ -110,8 +127,8 @@ class Amd64_elf:
     elif i[:14] == '0b100110110001': return f'movq (%r13), %r12'
     elif i[:14] == '0b100100010000': return f'testq %rax, %rax'
     elif i[:14] == '0b100100010110': return f'sarq %rsi'
+    elif i[:14] == '0b111010111000': return f'jmp 0x400xxx'
     elif i[:14] == '0b100100110000': return f'cmpq $0x401xxx, %r12'
-    elif i[:14] == '0b100100011111': return f'incq %rax'
     elif i[:14] == '0b111001101001': return f'jae 0x400xxx'
     elif i[:14] == '0b100010010001': return f'movl %r15d, %edi'
     elif i[:14] == '0b100110010001': return f'movq %r14, %rsi'
@@ -127,6 +144,8 @@ class Amd64_elf:
     elif i[:14] == '0b111010001101': return f'callq 0x400xxx'
     elif i[:14] == '0b101111110001': return f'movl $0x401xxx, %edi'
     elif i[:14] == '0b100000110111': return f'movl $0x401xxx, %r12d'
+    elif i[:13] == '0b11101000000': return f'je 0x400xxx <'
+    elif i[:13] == '0b11101011000': return f'jmp 0x400xxx <'
     elif i[:13] == '0b10001001110': return f'movl %eax, %edi'
     elif i[:13] == '0b10010001111': return f'decq %rbx'
     elif i[:12] == '0b1110101111': return f'jmp 0x400xxx'
@@ -135,6 +154,7 @@ class Amd64_elf:
     elif i[:12] == '0b1100011100': return f'xorl %ecx, %ecx'
     elif i[:12] == '0b1111110001': return f'jle 0x400xxx'
     elif i[:12] == '0b1110010000': return f'jb 0x400xxx'
+    elif i[:12] == '0b1110100000': return f'je 0x400xxx'
     elif i[:12] == '0b1110100001': return f'je 0x400xxx'
     elif i[:12] == '0b1100110001': return f'nopw (%rax,%rax)'
     elif i[:12] == '0b1100110000': return f'nopw (%rax,%rax)'
@@ -167,9 +187,9 @@ class Amd64_elf:
       6, 5, 5,
       6, 5, 5,
       6, 5, 5,
-      1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, # belong to below
-        2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,        #
-      5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2,    # belong to below
+      1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, # belongs to below
+        2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,     #
+      5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2,    # belongs to below
         2, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 14,                    #
       1, 3, 1, 1, 5, 7, 2, 5, 3, 4, 2, 14, 3, 2, 8, 4, 2, 2, 2, 4, 1, 1, 5, 1, 1, 10, 2,
       7, 7, 3, 2, 7, 3, 2, 2, 7, 1, 7,
@@ -185,7 +205,6 @@ class Amd64_elf:
       co += i
       if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')  # to get a new line between sections
       if j == 2: co = 24
-      if j == 84: co += 3
     return hx, bi, ins
 
 """
