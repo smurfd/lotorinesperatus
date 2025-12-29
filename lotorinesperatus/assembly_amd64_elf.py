@@ -21,13 +21,13 @@ class Amd64_elf:
   def get_lengths(self) -> Tuple:
     return 64, 72, 65                              # Length of header, proghd, secthd
   def get_header(self) -> List:                    # [::-1] for big endian
-    self.header.append(self.h[0:4])                # Magic number
-    self.header.append(self.h[4:5])                # 32bit or 64bit
-    self.header.append(self.h[5:6])                # Endianess
-    self.header.append(self.h[6:7])                # Version
-    self.header.append(self.h[7:8])                # Target system ABI
-    self.header.append(self.h[8:9])                # ABI version
-    self.header.append(self.h[9:16])               # Padding, should be zeros
+    self.header.append(self.h[ 0: 4])              # Magic number
+    self.header.append(self.h[ 4: 5])              # 32bit or 64bit
+    self.header.append(self.h[ 5: 6])              # Endianess
+    self.header.append(self.h[ 6: 7])              # Version
+    self.header.append(self.h[ 7: 8])              # Target system ABI
+    self.header.append(self.h[ 8: 9])              # ABI version
+    self.header.append(self.h[ 9:16])              # Padding, should be zeros
     self.header.append(self.h[16:18])              # Object filetype
     self.header.append(self.h[18:20])              # Target instruction set arch
     self.header.append(self.h[20:24])              # Version
@@ -43,9 +43,9 @@ class Amd64_elf:
     self.header.append(self.h[62:64])              # Section header index
     return self.header
   def get_header_program(self) -> List:
-    self.proghd.append(self.p[0:4])                # Segment type
-    self.proghd.append(self.p[4:8])                # Segment-dependent flags
-    self.proghd.append(self.p[8:16])               # Segment offset in the file image
+    self.proghd.append(self.p[ 0: 4])              # Segment type
+    self.proghd.append(self.p[ 4: 8])              # Segment-dependent flags
+    self.proghd.append(self.p[ 8:16])              # Segment offset in the file image
     self.proghd.append(self.p[16:24])              # Virtual Address of the segment in memory
     self.proghd.append(self.p[24:32])              # Segments physical address
     self.proghd.append(self.p[32:40])              # Size in bytes of the segment in file image
@@ -53,9 +53,9 @@ class Amd64_elf:
     self.proghd.append(self.p[64:72])              # Alignment
     return self.proghd
   def get_header_section(self) -> List:
-    self.secthd.append(self.s[0:4])                # Offset to name string 
-    self.secthd.append(self.s[4:8])                # Type of header
-    self.secthd.append(self.s[8:16])               # Flags
+    self.secthd.append(self.s[ 0: 4])              # Offset to name string
+    self.secthd.append(self.s[ 4: 8])              # Type of header
+    self.secthd.append(self.s[ 8:16])              # Flags
     self.secthd.append(self.s[16:24])              # Virtual address of the section in memory
     self.secthd.append(self.s[24:32])              # Section offset in the file image
     self.secthd.append(self.s[32:40])              # Section size in bytes
