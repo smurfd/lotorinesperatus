@@ -95,9 +95,6 @@ class Arm64_macho:
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
     i, ins, hx, bi, b = 0, [], [], [], []  # TODO: does this actually work for other binaries?
     while self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
-      print(f'F{i//4:02} {hex(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
-        f' {bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))}')
       ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
       hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
       bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
@@ -150,5 +147,4 @@ Disassembly of section __TEXT,__stubs:
 100000480: 90000030    	adrp	x16, 0x100004000 <_puts+0x100004000>
 100000484: f9400210    	ldr	x16, [x16]
 100000488: d61f0200    	br	x16
-
 """

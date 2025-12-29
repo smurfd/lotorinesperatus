@@ -14,7 +14,7 @@ class Amd64_elf:
     hl, ll, sl = self.get_lengths()
     with open(self.fn, 'rb') as f:
       self.file = f.read(); p1, p2 = 0, hl
-      self.h = self.file[p1:p2]; p1, p2 = hl, hl + ll  #hl + int(f'{binascii.hexlify(self.get_big(self.h[20:24])).decode()}', 16)
+      self.h = self.file[p1:p2]; p1, p2 = hl, hl + ll
       self.p = self.file[p1:p2]; p1, p2 = p2, p2 + sl + 3
       self.s = self.file[p1:p2]
       self.d = self.file[p2:]
@@ -178,10 +178,7 @@ class Amd64_elf:
     elif i[:9]  == '0b1010000': return f'pushq %rax'
     elif i[:9]  == '0b1010101' and len(i) == len('0b1010101'): return f'pushq %rbp'
   def get_assembly(self) -> List:
-    i, ins, hx, bi, co, p = 0, [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
-    #ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
-    #hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-    #bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
+    i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     op_bytes = [
       4, 4, 1, # TODO how to get these programmaticly
       6, 6, 4,
@@ -201,13 +198,13 @@ class Amd64_elf:
       1, 3, 5, 5, 5, 1, 1, 1,
       4, 4, 1]
     for j, i in enumerate(op_bytes):
-      print(f'{hex(int.from_bytes(self.file[p + co:p + co + i]))}'\
-        f' {bin(int.from_bytes(self.file[p + co:p + co + i]))}'\
-        f' {self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i])))}')
+      ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i]))))
+      hx.append(hex(int.from_bytes(self.file[p + co:p + co + i])))
+      bi.append(bin(int.from_bytes(self.file[p + co:p + co + i])))
+      b.append(self.file[p + co:p + co + i])
       co += i
-      if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')  # to get a new line between sections
-      if j == 2: co = 24
-    return hx, bi, ins
+      if j == 2: co = 24  # TODO: why?
+    return hx, bi, ins, b
 
 
 """

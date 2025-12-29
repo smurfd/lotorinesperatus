@@ -8,11 +8,11 @@ import platform, sys, os
 def read_arm_macho() -> None:
   print('--- arm64 macho header ---')
   arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
-  arm_header = arm.asm.get_header()
-  arm_command= arm.asm.get_command()
-  arm_loader = arm.asm.get_loader(0)
-  arm_segment= arm.asm.get_segment(80)
-  arm_data   = arm.asm.get_data()
+  arm_header  = arm.asm.get_header()
+  arm_command = arm.asm.get_command()
+  arm_loader  = arm.asm.get_loader(0)
+  arm_segment = arm.asm.get_segment(80)
+  arm_data    = arm.asm.get_data()
   arm.print_hex(arm.bytes2hex(arm_header))
   arm.print_hex(arm.bytes2hex(arm_loader))
   arm.print_hex(arm.bytes2hex(arm_segment))
@@ -37,7 +37,8 @@ def read_amd_elf() -> None:
   [print(f'Header {amd.hex2str(amd_header[i])}') for i in range(len(amd_header))]
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
-  amd.asm.get_assembly()
+  h, bi, a, b = amd.asm.get_assembly()
+  [print(f'Amd Asm: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('--- amd64 elf header ---')
 
 
