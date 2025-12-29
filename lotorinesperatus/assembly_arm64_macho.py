@@ -78,16 +78,16 @@ class Arm64_macho:
     self.segment.append(self.c[c + 76:c + 80])     # Reserved3
     return self.segment
   def get_instructions(self, i) -> Literal:
-    if   i[5:13] == '01001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
-    elif i[5:13] == '10001000': return f'mov x{int(i[29:34], 2)}, sp'
-    elif i[5:13] == '10000000': return f'adrp x{int(i[29:34], 2)}, 0'
-    elif i[5:13] == '10001000': return f'add x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, '
-    elif i[5:13] == '10100000': return f'bl'
-    elif i[5:13] == '00101000': return f'mov w{int(i[29:34], 2)}, #0x0'
-    elif i[5:13] == '01000110': return f'ldp x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, [sp], #0x10'
-    elif i[5:13] == '10110010': return f'ret'
-    elif i[5:13] == '11001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
-    elif i[5:13] == '10110000': return f'br x{int(i[24:29], 2)}'
+    if   i[:13] == '0b10101001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
+    elif i[:14] == '0b100100010000': return f'mov x{int(i[29:34], 2)}, sp'
+    elif i[:13] == '0b10010000000': return f'adrp x{int(i[29:34], 2)}, 0x100000xxx <'
+    elif i[:14] == '0b100100010001': return f'add x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, '
+    elif i[:13] == '0b10010100000': return f'bl 0x100000xxx <'
+    elif i[:13] == '0b10100101000': return f'mov w{int(i[29:34], 2)}, #0x0'
+    elif i[:13] == '0b10101000110': return f'ldp x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, [sp], #0x10'
+    elif i[:13] == '0b11010110010': return f'ret'
+    elif i[:13] == '0b11111001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
+    elif i[:13] == '0b11010110000': return f'br x{int(i[24:29], 2)}'
   def get_assembly(self) -> List:
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
