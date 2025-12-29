@@ -14,6 +14,8 @@ import binascii
 
 # Arm Architecture Reference Manual
 # https://developer.arm.com/documentation/ddi0487/lb/
+
+
 class Arm64_macho:
   def __init__(self, fn) -> None:
     self.header, self.command, self.loader, self.data, self.segment, self.sections, self.sections_data, self.fn = [], [], [], [], [], [], [], fn

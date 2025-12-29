@@ -15,15 +15,6 @@ class LotorInesperatus:
       self.bin = f.read()
       self.nr = len(self.bin) // 4
   def get_binary(self) -> Tuple: return self.bin, len(self.bin)
-  #def get_disassembly(self, code, test=False) -> Tuple:
-  #  if pm := platform.machine() == 'arm64': cs = capstone.Cs(capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
-  #  elif pm == 'amd64': cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-  #  cs.skipdata, ret = True, ''
-  #  # TODO: this logic should be in format, but probably we skip capstone, so dont move for now
-  #  if test: [ret := ret + f'{ins.address:#08x}: {ins.mnemonic}\t{ins.op_str}\n' for ins in cs.disasm(code, 0)]
-  #  else: [ret := ret + f'{ins.address:#08x}|{ins.mnemonic+(" " * (5 - len(ins.mnemonic)))}|{"|".join(str(y) for y in ins.op_str.split(", "))}\n'
-  #    .replace('|', '\t') for ins in cs.disasm(code, 0)]
-  #  return ret, len(ret)
   def curses_setup(self, curses) -> None:
     curses.noecho()
     curses.cbreak()

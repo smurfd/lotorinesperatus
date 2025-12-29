@@ -6,6 +6,8 @@ from typing import List, Tuple, Literal
 # https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
 # https://gabi.xinuos.com/v42/elf.pdf
 # https://web.archive.org/web/20250628070854/http://skyfree.org/linux/references/ELF_Format.pdf
+
+
 class Amd64_elf:
   def __init__(self, fn) -> None:
     self.header, self.proghd, self.secthd, self.data, self.file, self.fn = [], [], [], [], [], fn
@@ -206,6 +208,7 @@ class Amd64_elf:
       if j in [2, 5, 8, 11, 14, 17, 92, 162, 189, 200, 216, 228, 229, 237, 241]: print('\n')  # to get a new line between sections
       if j == 2: co = 24
     return hx, bi, ins
+
 
 """
 $ objdump -d lotorinesperatus/test/examples/hello_amd64_elf.bin
