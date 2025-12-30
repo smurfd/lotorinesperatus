@@ -177,10 +177,11 @@ class Amd64_elf:
     elif i[:9]  == '0b1010011': return f'pushq %rbx'
     elif i[:9]  == '0b1010000': return f'pushq %rax'
     elif i[:9]  == '0b1010101' and len(i) == len('0b1010101'): return f'pushq %rbp'
-  def get_assembly(self) -> List:
+  def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     op_bytes = [
       4, 4, 1, # TODO how to get these programmaticly
+      15,
       6, 6, 4,
       6, 5, 5,
       6, 5, 5,
@@ -198,12 +199,12 @@ class Amd64_elf:
       1, 3, 5, 5, 5, 1, 1, 1,
       4, 4, 1]
     for j, i in enumerate(op_bytes):
-      ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + co:p + co + i]))))
-      hx.append(hex(int.from_bytes(self.file[p + co:p + co + i])))
-      bi.append(bin(int.from_bytes(self.file[p + co:p + co + i])))
-      b.append(self.file[p + co:p + co + i])
+      byt = self.file[p + co:p + co + i]
+      ins.append(self.get_instructions(bin(int.from_bytes(byt))))
+      hx.append(hex(int.from_bytes(byt)))
+      bi.append(bin(int.from_bytes(byt)))
+      b.append(byt)
       co += i
-      if j == 2: co = 24  # TODO: why?
     return hx, bi, ins, b
 
 

@@ -4,10 +4,9 @@
 from lotorinesperatus.assembly import Assembly
 import platform, sys, os
 
-
 def read_arm_macho() -> None:
   print('--- arm64 macho header ---')
-  arm = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
+  arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
   arm_header  = arm.asm.get_header()
   arm_command = arm.asm.get_command()
   arm_loader  = arm.asm.get_loader(0)
@@ -25,7 +24,7 @@ def read_arm_macho() -> None:
   print('--- arm64 macho header ---')
 def read_amd_elf() -> None:
   print('--- amd64 elf header ---')
-  amd = Assembly(os.path.dirname(os.path.realpath(__file__)) + '/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
+  amd = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/hello_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
   amd_header         = amd.asm.get_header()
   amd_header_program = amd.asm.get_header_program()
   amd_header_section = amd.asm.get_header_section()

@@ -88,18 +88,19 @@ class Arm64_macho:
     elif i[:13] == '0b11010110010': return f'ret'
     elif i[:13] == '0b11111001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
     elif i[:13] == '0b11010110000': return f'br x{int(i[24:29], 2)}'
-  def get_assembly(self) -> List:
+  def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
     i, ins, hx, bi, b = 0, [], [], [], []  # TODO: does this actually work for other binaries?
-    while self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))) != None:
-      ins.append(self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1]))))
-      hx.append(hex(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-      bi.append(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))
-      b.append(self.file[p + i:p + i + 4][::-1])
-      i+=4
+    while (instr := self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))) != None:
+      ins.append(instr)
+      byt = self.file[p + i:p + i + 4][::-1]
+      hx.append(hex(int.from_bytes(byt)))
+      bi.append(bin(int.from_bytes(byt)))
+      b.append(byt)
+      i += 4
     return hx, bi, ins, b
   def get_sections(self, nr, p) -> List:
     self.sections = self.get_segment(p + 80)
