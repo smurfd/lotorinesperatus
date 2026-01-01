@@ -67,6 +67,21 @@ class Amd64_elf:
   def get_data(self) -> bytes:
     self.data = self.d
     return self.data
+  def get_register(self, b, ins, nr):
+    if len(b) > 33: j = 2
+    else: j = 0
+    if   ins == 'pushq': i = 0 + (nr * 3)
+    elif ins == 'movq':  # TODO: this does not work fully
+      if j: i = (len(b)//2)-5 + (nr * 3) - (j+(2-nr)) - int(not nr)
+      else:
+        if len(b) == 33 and nr: i = (len(b)//2)-5 + (nr * 3) - nr
+        elif len(b) == 33 and not nr: i = (len(b)//2)-5 + (nr * 3) + int(not(nr))
+        elif not(nr): i = (len(b)//2)-5 + (nr * 3) - int(not(nr)) + 1
+        else: i = (len(b)//2)-5 + (nr * 3)
+    if   b[5+i:8+i] == '011': return f'%rsp'
+    elif b[5+i:8+i] == '010': return f'%rbp'
+    elif b[5+i:8+i] == '001': return f'%rbx'
+    elif b[5+i:8+i] == '000': return f'%rax'
   def get_instructions(self, i) -> Literal:
     if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
@@ -102,7 +117,7 @@ class Amd64_elf:
     elif i[:16] == '0b10111111001100': return f'movl $0x401xxx, %edi'
     elif i[:16] == '0b11101000110000': return f'callq 0x400xxx'
     elif i[:16] == '0b10010001101000': return f'sarq %rsi'
-    elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), %rax'
+    elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), {self.get_register(i, "movq", 3)}' #%rax' # TODO: 
     elif i[:15] == '0b1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
     elif i[:15] == '0b1001000001010': return f'subq %rdi, %rsi'
     elif i[:15] == '0b1001000000000': return f'addq %rax, %rsi'
@@ -125,7 +140,9 @@ class Amd64_elf:
     elif i[:14] == '0b100100000000': return f'addq %rax, %rsi'
     elif i[:14] == '0b100000110001': return f'movl %edi, %r15d'
     elif i[:14] == '0b100100110001': return f'movq %rsi, %r14'
-    elif i[:14] == '0b100100010001': return f'movq %rsp, %rbp'
+    elif i[:14] == '0b100100010001': return f'movq {self.get_register(i, "movq", 1)}, {self.get_register(i, "movq", 0)}'#%rbp'
+    #elif i[:14] == '0b100100010001': return f'movq %rsp, {self.get_register(i, "movq", 0)}'#%rbp'
+    #elif i[:14] == '0b100100010001': return f'movq {self.get_register(i, "movq", 1)}, {self.get_register(i, "movq", 0)}'#%rsp, %rbp'
     elif i[:14] == '0b100110110001': return f'movq (%r13), %r12'
     elif i[:14] == '0b100100010000': return f'testq %rax, %rax'
     elif i[:14] == '0b100100010110': return f'sarq %rsi'
@@ -174,9 +191,9 @@ class Amd64_elf:
     elif i[:9]  == '0b1011100': return f'movl {hex(int(i[29:34], 2))}, %eax'
     elif i[:9]  == '0b1011011': return f'popq %rbx'
     elif i[:9]  == '0b1110101': return f'jne 0x400xxx'
-    elif i[:9]  == '0b1010011': return f'pushq %rbx'
-    elif i[:9]  == '0b1010000': return f'pushq %rax'
-    elif i[:9]  == '0b1010101' and len(i) == len('0b1010101'): return f'pushq %rbp'
+    elif i[:9]  == '0b1010011': return f'pushq {self.get_register(i, "pushq", 0)}'
+    elif i[:9]  == '0b1010000': return f'pushq {self.get_register(i, "pushq", 0)}'
+    elif i[:9]  == '0b1010101' and len(i) == len('0b1010101'): return f'pushq {self.get_register(i, "pushq", 0)}'
   def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     op_bytes = [
