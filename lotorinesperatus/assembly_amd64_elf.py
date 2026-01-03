@@ -67,21 +67,34 @@ class Amd64_elf:
   def get_data(self) -> bytes:
     self.data = self.d
     return self.data
-  def get_register(self, b, ins, nr):
-    if len(b) > 33: j = 2
+  def get_register(self, b, ins, nr, d = 0):
+    reg = [['101', f'%rsp'], ['011', f'%rsp'], ['010', f'%rbp'], ['001', f'%rbx'], ['000', f'%rax']]
+    if len(b) > 33 and len(b) < 56: j = 2  # jump steps between instructions
+    elif len(b) > 56 and len(b) < 65: j = 0
+    elif len(b) == 65: j = 3
     else: j = 0
     if   ins == 'pushq': i = 0 + (nr * 3)
-    elif ins == 'movq':  # TODO: this does not work fully
-      if j: i = (len(b)//2)-5 + (nr * 3) - (j+(2-nr)) - int(not nr)
+    elif ins == 'movq':  # if d == 1, means we cant move from one register to the same register  # TODO: BARF this looks "good"
+      if j:
+        i = (len(b)//2)-5 + (nr * 3) - (j+(2-nr)) - int(not nr)
+        if len(b) == 65:
+          if not nr:
+            for k in reg:
+              if k[0] in b[i+2:i+5]: d = 1
       else:
         if len(b) == 33 and nr: i = (len(b)//2)-5 + (nr * 3) - nr
         elif len(b) == 33 and not nr: i = (len(b)//2)-5 + (nr * 3) + int(not(nr))
-        elif not(nr): i = (len(b)//2)-5 + (nr * 3) - int(not(nr)) + 1
+        elif len(b) == 57:
+          i = (len(b)//2)-5 + (nr * 3) + (len(b)//5)-4
+          if b[i+2:i+5] == b[i+5:i+8]: d = 1
         else: i = (len(b)//2)-5 + (nr * 3)
-    if   b[5+i:8+i] == '011': return f'%rsp'
-    elif b[5+i:8+i] == '010': return f'%rbp'
-    elif b[5+i:8+i] == '001': return f'%rbx'
-    elif b[5+i:8+i] == '000': return f'%rax'
+    if   d == 0 and b[5+i:8+i] == '101': return f'%rsp'  # d for duplicate
+    elif d == 0 and b[5+i:8+i] == '011': return f'%rsp'
+    elif d == 1 and b[5+i:8+i] == '010': return f'%rsp'
+    elif d == 0 and b[5+i:8+i] == '010': return f'%rbp'
+    elif d == 1 and b[5+i:8+i] == '101': return f'%rbp'
+    elif d == 0 and b[5+i:8+i] == '001': return f'%rbx'
+    elif d == 0 and b[5+i:8+i] == '000': return f'%rax'
   def get_instructions(self, i) -> Literal:
     if   i[:23] == '0b100100111000001111111': return f'sarq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
@@ -117,7 +130,7 @@ class Amd64_elf:
     elif i[:16] == '0b10111111001100': return f'movl $0x401xxx, %edi'
     elif i[:16] == '0b11101000110000': return f'callq 0x400xxx'
     elif i[:16] == '0b10010001101000': return f'sarq %rsi'
-    elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), {self.get_register(i, "movq", 3)}' #%rax' # TODO: 
+    elif i[:16] == '0b10010101000101': return f'movq 0x401xxx(,%r13,8), {self.get_register(i, "movq", 3)}'
     elif i[:15] == '0b1000000000111': return f'cmpb {hex(int(i[16:17], 2))}, ${hex(int(i[29:34], 2))}{int(i[18:26], 2):02x}(%rip)'
     elif i[:15] == '0b1001000001010': return f'subq %rdi, %rsi'
     elif i[:15] == '0b1001000000000': return f'addq %rax, %rsi'
