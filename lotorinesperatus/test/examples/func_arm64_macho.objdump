@@ -1,0 +1,45 @@
+
+func_arm64_macho.bin:	file format mach-o arm64
+
+Disassembly of section __TEXT,__text:
+
+0000000100000460 <_func>:
+100000460: d10083ff    	sub	sp, sp, #0x20
+100000464: f90007e0    	str	x0, [sp, #0x8]
+100000468: b9001fff    	str	wzr, [sp, #0x1c]
+10000046c: 14000008    	b	0x10000048c <_func+0x2c>
+100000470: b9801fe0    	ldrsw	x0, [sp, #0x1c]
+100000474: f94007e1    	ldr	x1, [sp, #0x8]
+100000478: 8b000020    	add	x0, x1, x0
+10000047c: f90007e0    	str	x0, [sp, #0x8]
+100000480: b9401fe0    	ldr	w0, [sp, #0x1c]
+100000484: 11000400    	add	w0, w0, #0x1
+100000488: b9001fe0    	str	w0, [sp, #0x1c]
+10000048c: b9401fe0    	ldr	w0, [sp, #0x1c]
+100000490: 71004c1f    	cmp	w0, #0x13
+100000494: 54fffeed    	b.le	0x100000470 <_func+0x10>
+100000498: f94007e0    	ldr	x0, [sp, #0x8]
+10000049c: 910083ff    	add	sp, sp, #0x20
+1000004a0: d65f03c0    	ret
+
+00000001000004a4 <_main>:
+1000004a4: d10083ff    	sub	sp, sp, #0x20
+1000004a8: a9017bfd    	stp	x29, x30, [sp, #0x10]
+1000004ac: 910043fd    	add	x29, sp, #0x10
+1000004b0: d2800c80    	mov	x0, #0x64               ; =100
+1000004b4: 97ffffeb    	bl	0x100000460 <_func>
+1000004b8: b90003e0    	str	w0, [sp]
+1000004bc: 90000000    	adrp	x0, 0x100000000 <_printf+0x100000000>
+1000004c0: 9113a000    	add	x0, x0, #0x4e8
+1000004c4: 94000005    	bl	0x1000004d8 <_printf+0x1000004d8>
+1000004c8: 52800000    	mov	w0, #0x0                ; =0
+1000004cc: a9417bfd    	ldp	x29, x30, [sp, #0x10]
+1000004d0: 910083ff    	add	sp, sp, #0x20
+1000004d4: d65f03c0    	ret
+
+Disassembly of section __TEXT,__stubs:
+
+00000001000004d8 <__stubs>:
+1000004d8: 90000030    	adrp	x16, 0x100004000 <_printf+0x100004000>
+1000004dc: f9400210    	ldr	x16, [x16]
+1000004e0: d61f0200    	br	x16

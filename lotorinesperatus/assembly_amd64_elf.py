@@ -208,6 +208,7 @@ class Amd64_elf:
     elif i[:9]  == '0b1010011': return f'pushq {self.get_register(i, "pushq", 0)}'
     elif i[:9]  == '0b1010000': return f'pushq {self.get_register(i, "pushq", 0)}'
     elif i      == '0b11001100': return f'int3'
+    else: return f'NOOP'  # catch all
   def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     op_bytes = [
