@@ -88,6 +88,9 @@ class Amd64_elf:
           i = (len(b)//2)-5 + (nr * 3) + (len(b)//5)-4
           if b[i+2:i+5] == b[i+5:i+8]: d = 1
         else: i = (len(b)//2)-5 + (nr * 3)
+    elif ins == 'decq': i = (len(b)//2)+2 + (nr * 3)
+    elif ins == 'incq': i = (len(b)//2)+2 + (nr * 3)
+    elif ins == 'jmpq': i = (len(b)//2)-1 + (nr * 3)
     if   d == 0 and b[5+i:8+i] == '101': return f'%rsp'  # d for duplicate
     elif d == 0 and b[5+i:8+i] == '011': return f'%rsp'
     elif d == 1 and b[5+i:8+i] == '010': return f'%rsp'
@@ -100,8 +103,8 @@ class Amd64_elf:
     elif i[:23] == '0b100100110000011111111': return f'cmpq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:23] == '0b100100110000011110101': return f'adcq ${hex(int(i[29:34], 2))}, %r{int(i[2:7], 2):x}'
     elif i[:22] == '0b10010001000110100000': return f'leaq {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip), %rdi'
-    elif i[:22] == '0b10010001111111111001': return f'decq %rbx'
-    elif i[:22] == '0b10010001111111111000': return f'incq %rax'
+    elif i[:22] == '0b10010001111111111001': return f'decq {self.get_register(i, "decq", 0)}'
+    elif i[:22] == '0b10010001111111111000': return f'incq {self.get_register(i, "incq", 0)}'
     elif i[:21] == '0b1001000100000111110': return f'subq ${hex(int(i[29:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111100': return f'addq ${hex(int(i[28:34], 2))}, %rsp'
     elif i[:21] == '0b1001000100000111111': return f'cmpq ${hex(int(i[29:34], 2))}, %rax'
@@ -109,12 +112,12 @@ class Amd64_elf:
     elif i[:21] == '0b1001000110000011111': return f'sarq ${hex(int(i[29:34], 2))}, %rax'
     elif i[:20] == '0b100100010001101001': return f'leaq {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip), %rdi'
     elif i[:20] == '0b100100010001101000': return f'leaq (%rdi,%rax,8), %rbx'
-    elif i[:20] == '0b100010100110001111': return f'xorl %r13d, %r13d'
-    elif i[:20] == '0b100100111111111110': return f'incq %r13'
-    elif i[:20] == '0b100110100111001111': return f'cmpq %r13, %r12'
-    elif i[:19] == '0b10010010010100111': return f'subq %rax, %r12'
+    elif i[:20] == '0b100010100110001111': return f'xorl %r{int(i[2:7], 2)+2:x}d, %r{int(i[2:7], 2)+2:x}d'
+    elif i[:20] == '0b100100111111111110': return f'incq %r{int(i[2:7], 2)+1:x}'
+    elif i[:20] == '0b100110100111001111': return f'cmpq %r{int(i[2:7], 2):x}, %r{int(i[8:13], 2)-1:x}'
+    elif i[:19] == '0b10010010010100111': return f'subq %rax, %r{int(i[2:7], 2):x}'
     elif i[:18] == '0b1001000100000110': return f'cmpq {hex(int(i[41:46], 2))}, {hex(int(i[36:41], 2))}{int(i[25:33], 2):x}(%rip)'
-    elif i[:18] == '0b1111111111100000': return f'jmpq *%rax'
+    elif i[:18] == '0b1111111111100000': return f'jmpq *{self.get_register(i, "jmpq", 0)}'
     elif i[:17] == '0b111010100010111': return f'jne 0x400xxx'
     elif i[:17] == '0b111010000111111': return f'callq 0x400xxx <>'
     elif i[:17] == '0b111010000000000': return f'callq 0x400xxx <'
@@ -153,10 +156,8 @@ class Amd64_elf:
     elif i[:14] == '0b100100000000': return f'addq %rax, %rsi'
     elif i[:14] == '0b100000110001': return f'movl %edi, %r15d'
     elif i[:14] == '0b100100110001': return f'movq %rsi, %r14'
-    elif i[:14] == '0b100100010001': return f'movq {self.get_register(i, "movq", 1)}, {self.get_register(i, "movq", 0)}'#%rbp'
-    #elif i[:14] == '0b100100010001': return f'movq %rsp, {self.get_register(i, "movq", 0)}'#%rbp'
-    #elif i[:14] == '0b100100010001': return f'movq {self.get_register(i, "movq", 1)}, {self.get_register(i, "movq", 0)}'#%rsp, %rbp'
-    elif i[:14] == '0b100110110001': return f'movq (%r13), %r12'
+    elif i[:14] == '0b100100010001': return f'movq {self.get_register(i, "movq", 1)}, {self.get_register(i, "movq", 0)}'
+    elif i[:14] == '0b100110110001': return f'movq (%r{int(i[2:7], 2):x}), %r{int(i[2:7], 2)-1:x}'
     elif i[:14] == '0b100100010000': return f'testq %rax, %rax'
     elif i[:14] == '0b100100010110': return f'sarq %rsi'
     elif i[:14] == '0b111010111000': return f'jmp 0x400xxx'
@@ -195,18 +196,18 @@ class Amd64_elf:
     elif i[:11] == '0b111010011': return f'jmp 0x4004c0 <.plt>'
     elif i[:11] == '0b111010001': return f'je 0x400xxx'
     elif i[:11] == '0b111010000': return f'callq 0x400xxx'
-    elif i[:10] == '0b11001100' and len(i) == len('0b11001100'): return f'int3'
     elif i[:10] == '0b11001101': return f'nop'
     elif i[:10] == '0b10010000': return f'nop'
     elif i[:10] == '0b11000011': return f'retq'
-    elif i[:9]  == '0b1011101' and len(i) == len('0b1011101'): return f'popq %rpb'
+    elif i      == '0b1010101': return f'pushq {self.get_register(i, "pushq", 0)}'
+    elif i      == '0b1011101': return f'popq %rpb'
     elif i[:9]  == '0b1011101': return f'movl $0x401xxx, %ebx'
     elif i[:9]  == '0b1011100': return f'movl {hex(int(i[29:34], 2))}, %eax'
     elif i[:9]  == '0b1011011': return f'popq %rbx'
     elif i[:9]  == '0b1110101': return f'jne 0x400xxx'
     elif i[:9]  == '0b1010011': return f'pushq {self.get_register(i, "pushq", 0)}'
     elif i[:9]  == '0b1010000': return f'pushq {self.get_register(i, "pushq", 0)}'
-    elif i[:9]  == '0b1010101' and len(i) == len('0b1010101'): return f'pushq {self.get_register(i, "pushq", 0)}'
+    elif i      == '0b11001100': return f'int3'
   def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
     op_bytes = [
