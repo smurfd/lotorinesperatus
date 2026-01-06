@@ -88,7 +88,7 @@ class Arm64_macho:
     elif i[:13] == '0b11010110010': return f'ret'
     elif i[:13] == '0b11111001010': return f'ldr x{int(i[29:34], 2)}, [x16]'
     elif i[:13] == '0b11010110000': return f'br x{int(i[24:29], 2)}'
-    else: return f'NOOP'  # catch all
+    elif i      != '0b0': return f'NOOP'  # catch all
   def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
     # https://gist.github.com/jemo07/ef2f0be8ed12e1e4f181ab522cd66889
     # https://stackoverflow.com/questions/11785973/converting-very-simple-arm-instructions-to-binary-hex
