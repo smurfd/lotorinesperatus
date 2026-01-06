@@ -95,7 +95,7 @@ class Arm64_macho:
     # https://medium.com/@mohamad.aerabi/arm-binary-analysis-part7-613d1dc9b9e2
     p = int.from_bytes(self.header[5][::-1]) + 64  # 1120 = 0x460 = sizeof load commands + 64
     i, ins, hx, bi, b = 0, [], [], [], []  # TODO: does this actually work for other binaries?
-    while (instr := self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))) != None:
+    while (instr := self.get_instructions(bin(int.from_bytes(self.file[p + i:p + i + 4][::-1])))) != None and self.file[p + i:p + i + 4][::-1] != b'':
       ins.append(instr)
       byt = self.file[p + i:p + i + 4][::-1]
       hx.append(hex(int.from_bytes(byt)))
