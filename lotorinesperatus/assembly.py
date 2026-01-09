@@ -4,7 +4,7 @@
 from lotorinesperatus.assembly_arm64_macho import Arm64_macho
 from lotorinesperatus.assembly_amd64_elf import Amd64_elf
 from typing import List, Tuple, Literal
-import binascii
+import binascii, csv
 
 
 class Assembly:
@@ -29,3 +29,13 @@ class Format:
   def format_output(self, st) -> Literal: return ' '.join([self.get_color_red(str(x)) if i == 0 else self.get_color_green(str(x))
     if i == 1 else self.get_color_yellow(str(x)) if i == 2 else self.get_color_purple(str(x)) for i, x in enumerate(st.split('\t'))])
   def print(self, st) -> None: [print(f'{self.format_output(line)}') for line in st.split('\n')]
+
+
+class Objdump:
+  def __init__(self, fn) -> None: self.fn = fn; self.ctx = []
+  def get(self) -> Literal:
+    with open(self.fn, newline='') as f:
+      self.r = csv.reader(f, delimiter='\t')
+      for x in self.r:
+        if x[1:]: self.ctx.append(x[1:])
+    return self.ctx
