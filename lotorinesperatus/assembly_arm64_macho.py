@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
+# Auth: smurfd, 2025; 2 space indent; 150 width;                                                                                                    #
 # ------------------------------------------------------------------------------------------------------------------------------------------------- #
 from typing import List, Tuple, Literal
 import binascii

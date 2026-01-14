@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Auth: smurfd, 2025; 2 space indent; 150 with;                                                                                                     #
+# Auth: smurfd, 2025; 2 space indent; 150 width;                                                                                                    #
 # ------------------------------------------------------------------------------------------------------------------------------------------------- #
 from lotorinesperatus.assembly_arm64_macho import Arm64_macho
 from lotorinesperatus.assembly_amd64_elf import Amd64_elf
