@@ -79,6 +79,9 @@ class Arm64_macho:
     return self.segment
   def get_instructions(self, i) -> Literal:
     if   i[:13] == '0b10101001101': return f'stp x{int(i[29:34], 2)}, x{int(i[19:24], 2)} [sp, #-0x10]'
+    elif i[:20] == '0b100100010000000001': return f'add x29, sp, #0x10'
+    elif i[:19] == '0b10010001000000001': return f'add sp, sp, #0x20'
+    elif i[:19] == '0b10010001000000000': return f'mov x{int(i[29:34], 2)}, sp'
     elif i[:14] == '0b100100010000': return f'mov x{int(i[29:34], 2)}, sp'
     elif i[:13] == '0b10010000000': return f'adrp x{int(i[29:34], 2)}, 0x100000xxx <'
     elif i[:14] == '0b100100010001': return f'add x{int(i[29:34], 2)}, x{int(i[19:24], 2)}, '

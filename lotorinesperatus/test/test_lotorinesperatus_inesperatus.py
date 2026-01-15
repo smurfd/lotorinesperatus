@@ -82,7 +82,6 @@ def read_helloamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   h, bi, a, b = amd.asm.get_assembly()
-  #for i,f in enumerate(hamd): print(f, " ----------- ", a[i], i)
 def read_helloarm_objdump() -> None:
   harm = Objdump('lotorinesperatus/test/examples/hello_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
@@ -92,7 +91,7 @@ def read_helloarm_objdump() -> None:
   arm_segment = arm.asm.get_segment(80)
   arm_data    = arm.asm.get_data()
   h, bi, a, b = arm.asm.get_assembly()
-  #for i,f in enumerate(harm): print(f, " ----------- ", a[i])
+  for i,f in enumerate(harm[1:]): assert f[0] == a[i].split(' ')[0]
 def read_funcamd_objdump() -> None:
   famd = Objdump('lotorinesperatus/test/examples/func_amd64_elf.objdump').get()
   amd = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/func_amd64_elf.bin', arch='amd64', flavour='amd64', binfmt='elf')
@@ -101,7 +100,6 @@ def read_funcamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   h, bi, a, b = amd.asm.get_assembly()
-  #for i,f in enumerate(famd): print(f, " ----------- ", a[i], i)
 def read_funcarm_objdump() -> None:
   farm = Objdump('lotorinesperatus/test/examples/func_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/func_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
@@ -111,7 +109,8 @@ def read_funcarm_objdump() -> None:
   arm_segment = arm.asm.get_segment(80)
   arm_data    = arm.asm.get_data()
   h, bi, a, b = arm.asm.get_assembly()
-  #for i,f in enumerate(farm): print(f, " ----------- ", a[i])
+  for i,f in enumerate(farm[1:]):
+    if a[i].split(' ')[0] != 'NOOP': assert f[0] == a[i].split(' ')[0]
 
 
 if __name__ == '__main__':
