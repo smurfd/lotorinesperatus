@@ -34,8 +34,5 @@ class Format:
 class Objdump:
   def __init__(self, fn) -> None: self.fn = fn; self.ctx = []
   def get(self) -> Literal:
-    with open(self.fn, newline='') as f:
-      self.r = csv.reader(f, delimiter='\t')
-      for x in self.r:
-        if x[1:]: self.ctx.append(x[1:])
+    with open(self.fn, newline='') as f: [self.ctx.append(x[1:]) if x[1:] else None for x in csv.reader(f, delimiter='\t')]
     return self.ctx

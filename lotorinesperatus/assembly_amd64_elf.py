@@ -68,19 +68,16 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def get_register(self, b, ins, nr, d = 0):
-    reg = [['101', f'%rsp'], ['011', f'%rsp'], ['010', f'%rbp'], ['001', f'%rbx'], ['000', f'%rax']]
+    reg, d = [['101', f'%rsp'], ['011', f'%rsp'], ['010', f'%rbp'], ['001', f'%rbx'], ['000', f'%rax']], 0
     if len(b) > 33 and len(b) < 56: j = 2  # jump steps between instructions
     elif len(b) > 56 and len(b) < 65: j = 0
     elif len(b) == 65: j = 3
     else: j = 0
     if   ins == 'pushq': i = 0 + (nr * 3)
-    elif ins == 'movq':  # if d == 1, means we cant move from one register to the same register  # TODO: BARF this looks "good"
+    elif ins == 'movq':  # if d == 1, means we cant move from one register to the same register
       if j:
         i = (len(b)//2)-5 + (nr * 3) - (j+(2-nr)) - int(not nr)
-        if len(b) == 65:
-          if not nr:
-            for k in reg:
-              if k[0] in b[i+2:i+5]: d = 1
+        if len(b) == 65 and not nr: [d := 1 if k[0] in b[i+2:i+5] else None for k in reg]
       else:
         if len(b) == 33 and nr: i = (len(b)//2)-5 + (nr * 3) - nr
         elif len(b) == 33 and not nr: i = (len(b)//2)-5 + (nr * 3) + int(not(nr))
