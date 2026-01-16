@@ -109,8 +109,7 @@ def read_funcarm_objdump() -> None:
   arm_segment = arm.asm.get_segment(80)
   arm_data    = arm.asm.get_data()
   h, bi, a, b = arm.asm.get_assembly()
-  for i,f in enumerate(farm[1:]):
-    if a[i].split(' ')[0] != 'NOOP': assert f[0] == a[i].split(' ')[0]
+  for i,f in enumerate(farm[1:]): assert f[0] == a[i].split(' ')[0]
 
 
 if __name__ == '__main__':
