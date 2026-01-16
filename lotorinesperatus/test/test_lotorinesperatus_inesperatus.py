@@ -82,6 +82,11 @@ def read_helloamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   h, bi, a, b = amd.asm.get_assembly()
+  c = 0
+  for i,f in enumerate(hamd):
+    if f[0] == 'file format elf64-x86-64': c = -1; continue
+    assert f[0] == a[i+c].split(' ')[0]
+    if c < 0 and i > 2: c = 0
 def read_helloarm_objdump() -> None:
   harm = Objdump('lotorinesperatus/test/examples/hello_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
