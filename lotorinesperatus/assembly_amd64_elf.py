@@ -69,7 +69,7 @@ class Amd64_elf:
     return self.data
   def get_register(self, b, ins, nr, d = 0):
     reg, d = [['101', f'%rsp'], ['011', f'%rsp'], ['010', f'%rbp'], ['001', f'%rbx'], ['000', f'%rax']], 0
-    if len(b) > 33 and len(b) < 56: j = 2  # jump steps between instructions
+    if   len(b) > 33 and len(b) < 56: j = 2  # jump steps between instructions
     elif len(b) > 56 and len(b) < 65: j = 0
     elif len(b) == 65: j = 3
     else: j = 0
@@ -79,7 +79,7 @@ class Amd64_elf:
         i = (len(b)//2)-5 + (nr * 3) - (j+(2-nr)) - int(not nr)
         if len(b) == 65 and not nr: [d := 1 if k[0] in b[i+2:i+5] else None for k in reg]
       else:
-        if len(b) == 33 and nr: i = (len(b)//2)-5 + (nr * 3) - nr
+        if   len(b) == 33 and nr: i = (len(b)//2)-5 + (nr * 3) - nr
         elif len(b) == 33 and not nr: i = (len(b)//2)-5 + (nr * 3) + int(not(nr))
         elif len(b) == 57:
           i = (len(b)//2)-5 + (nr * 3) + (len(b)//5)-4
@@ -121,6 +121,7 @@ class Amd64_elf:
     elif i[:17] == '0b100100110000011': return f'addq ${hex(int(i[28:34], 2))}, %r14'
     elif i[:16] == '0b10010001000000': return f'cmpq $0x401xxx, %rbx'
     elif i[:16] == '0b10000011111110': return f'cmpl ${hex(int(i[20:26], 2))}, %ecx'
+    elif i[:16] == '0b10000011011111': return f'cmpl ${hex(int(i[20:26], 2))}, %ecx'
     elif i[:16] == '0b10000011111111': return f'callq *x{int(i[28:33], 2):x}(%r13)'
     elif i[:16] == '0b10010001000001': return f'addq {hex(int(i[28:33], 2))}, %rbx'
     elif i[:16] == '0b11101000100001': return f'callq 0x400xxx <'
@@ -130,6 +131,7 @@ class Amd64_elf:
     elif i[:17] == '0b111010000001001': return f'je 0x400xxx'
     elif i[:17] == '0b111010000010100': return f'je 0x400xxx'
     elif i[:17] == '0b111010000001000': return f'je 0x400xxx'
+    elif i[:17] == '0b111010000011011': return f'je 0x400xxx'
     elif i[:15] == '0b1110100111000': return f'jmp 0x400xxx <'
     elif i[:15] == '0b1110100111010': return f'jmp 0x400xxx <'
     elif i[:15] == '0b1110100111011': return f'je 0x400xxx <'
@@ -150,11 +152,20 @@ class Amd64_elf:
     elif i[:14] == '0b111010001110': return f'callq 0x400xxx <'
     elif i[:14] == '0b111010000001': return f'callq 0x400xxx <'
     elif i[:14] == '0b111010000010': return f'callq 0x400xxx <'
+    elif i[:14] == '0b111010000011': return f'callq 0x400xxx <'
+    elif i[:14] == '0b111010001100': return f'callq 0x400xxx'
     elif i[:14] == '0b111010111011': return f'jmp 0x400xxx <'
     elif i[:14] == '0b111111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
     elif i[:14] == '0b101111110011': return f'pushq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
     elif i[:14] == '0b111111110010': return f'jmpq *{hex(int(i[29:34], 2))}{int(i[18:26], 2):x}(%rip)'
     elif i[:14] == '0b110100000000': return f'pushq ${hex(int(i[15:17], 2))}'
+    elif i[:14] == '0b100000110100': return f'addl $0x1, -0x4(%rbp)'
+    elif i[:14] == '0b111010010000': return f'jmp 0x400864 <_fini>'
+    elif i[:14] == '0b110001110100': return f'movl $0x0, -0x4(%rbp)'
+    elif i[:14] == '0b100010110100': return f'movl -0x4(%rbp), %eax'
+    elif i[:14] == '0b100100010011': return f'cltq'
+    elif i[:14] == '0b111111011101': return f'jle 0x400823 <func+0x11>'
+    elif i[:14] == '0b101111110110': return f'movl $0xxxxx, %edi'
     elif i[:14] == '0b111100011111': return f'nopl (%rax)'
     elif i[:14] == '0b100100000101': return f'subq %rdi, %rsi'
     elif i[:14] == '0b100100000000': return f'addq %rax, %rsi'
@@ -213,10 +224,12 @@ class Amd64_elf:
     elif i[:9]  == '0b1010000': return f'pushq {self.get_register(i, "pushq", 0)}'
     elif i      == '0b11001100': return f'int3'
     elif i      != '0b0': return f'NOOP'  # catch all
-  def get_assembly(self) -> List:  # Hex, binary, instruction, bytes
+  def get_assembly(self, n) -> List:  # Hex, binary, instruction, bytes
     i, ins, hx, bi, b, co, p = 0, [], [], [], [], 0, 1192  # 1192 = 0x4004a8 - 0x4a8
-    op_bytes = [
-      4, 4, 1, # TODO how to get these programmaticly
+    # TODO: How do we get these programmaticly?!?! manually fetched from objdump file
+    if n == 1:  # Hello example
+      op_bytes = [
+      4, 4, 1,
       15,
       6, 6, 4,
       6, 5, 5,
@@ -233,6 +246,27 @@ class Amd64_elf:
       7, 2, 1, 3, 5, 7, 1, 1, 5, 1, 11, 4,
       2,
       1, 3, 5, 5, 5, 1, 1, 1,
+      4, 4, 1]
+    elif n == 2:  # Func example
+      op_bytes = [
+      4, 4, 1,
+      15,
+      6, 6, 4,
+      6, 5, 5,
+      6, 5, 5,
+      6, 5, 5,
+      6, 5, 5,
+      1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 4, 4, 8, 2, 7, 4, 3, 2, 3, 3, 2, 15, 7, 3, 4, 3, 2, 2, 2, 5, 3, 2, 4, 6, 2, 3, 4, 7, # belongs to below
+        2, 5, 2, 2, 2, 2, 2, 5, 5, 3, 2, 2, 5, 2, 5, 2, 4, 2, 4, 4, 2, 3, 5, 2, 5, 4, 3, 3, 3, 5, 3, 3, 3, 5, 2, 5, 15,     #
+      5, 3, 2, 1, 1, 3, 2, 2, 2, 2, 1, 1, 3, 3, 3, 5, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 12, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2,    # belongs to below
+        2, 5, 6, 7, 2, 5, 3, 4, 4, 4, 3, 2, 3, 3, 2, 8, 4, 2, 3, 3, 3, 2, 2, 4, 1, 2, 2, 2, 2, 1, 1, 14,                    #
+      1, 3, 1, 1, 5, 7, 2, 5, 3, 4, 2, 14, 3, 2, 8, 4, 2, 2, 2, 4, 1, 1, 5, 1, 1, 10, 2,
+      7, 7, 3, 2, 7, 3, 2, 2, 7, 1, 7,
+      7, 7, 3, 3, 4, 4, 3, 3, 2, 7, 3, 2, 2, 6, 1, 7,
+      7, 2, 1, 3, 5, 7, 1, 1, 5, 1, 11, 4,
+      2,
+      1, 3, 4, 7, 2, 3, 2, 4, 4, 4, 2, 4, 1, 1,
+      1, 3, 5, 5, 2, 5, 5, 5, 5, 1, 1, 2,
       4, 4, 1]
     for j, i in enumerate(op_bytes):
       byt = self.file[p + co:p + co + i]

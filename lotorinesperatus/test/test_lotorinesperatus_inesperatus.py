@@ -36,7 +36,7 @@ def read_amd_elf_hello() -> None:
   [print(f'Header {amd.hex2str(amd_header[i])}') for i in range(len(amd_header))]
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
-  h, bi, a, b = amd.asm.get_assembly()
+  h, bi, a, b = amd.asm.get_assembly(1)
   [print(f'Amd Asm hello: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('--- amd64 elf header ---')
 def read_arm_macho_func() -> None:
@@ -71,7 +71,7 @@ def read_amd_elf_func() -> None:
   [print(f'Header {amd.hex2str(amd_header[i])}') for i in range(len(amd_header))]
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
-  h, bi, a, b = amd.asm.get_assembly()
+  h, bi, a, b = amd.asm.get_assembly(2)
   [print(f'Amd Asm func: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('--- amd64 elf header ---')
 def read_helloamd_objdump() -> None:
@@ -81,7 +81,7 @@ def read_helloamd_objdump() -> None:
   amd_header_program = amd.asm.get_header_program()
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
-  h, bi, a, b = amd.asm.get_assembly()
+  h, bi, a, b = amd.asm.get_assembly(1)
   c = 0
   for i,f in enumerate(hamd):
     if f[0] == 'file format elf64-x86-64': c = -1; continue
@@ -104,7 +104,12 @@ def read_funcamd_objdump() -> None:
   amd_header_program = amd.asm.get_header_program()
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
-  h, bi, a, b = amd.asm.get_assembly()
+  h, bi, a, b = amd.asm.get_assembly(2)
+  c = 0
+  for i,f in enumerate(famd):
+    if f[0] == 'file format elf64-x86-64': c = -1; continue
+    assert f[0] == a[i+c].split(' ')[0]
+    if c < 0 and i > 2: c = 0
 def read_funcarm_objdump() -> None:
   farm = Objdump('lotorinesperatus/test/examples/func_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/func_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
