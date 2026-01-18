@@ -38,6 +38,8 @@ def read_amd_elf_hello() -> None:
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
   h, bi, a, b = amd.asm.get_assembly(1)
   [print(f'Amd Asm hello: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
+  print('////')
+  print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
   print('--- amd64 elf header ---')
 def read_arm_macho_func() -> None:
   print('--- arm64 macho header ---')
@@ -73,6 +75,8 @@ def read_amd_elf_func() -> None:
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
   h, bi, a, b = amd.asm.get_assembly(2)
   [print(f'Amd Asm func: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
+  print('////')
+  print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
   print('--- amd64 elf header ---')
 def read_helloamd_objdump() -> None:
   hamd = Objdump('lotorinesperatus/test/examples/hello_amd64_elf.objdump').get()
