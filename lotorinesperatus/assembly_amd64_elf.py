@@ -283,43 +283,105 @@ class Amd64_elf:
   def get_assembly_correctly(self) -> List:
     reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
     byt, co, p = b'', 0, 1192  # 1192 = 0x4004a8 - 0x4a8
-    while p+co < len(self.file):
-      byt = self.file[p+co:p+co+1]
-      bit16, bit64 = False, False
+    while p + co < len(self.file):
+      bit16, bit64, cond, byt = False, False, False, self.file[p + co:p + co + 1]
       if hex(int.from_bytes(byt)) == '0x48':  # Check if 64bit op
-        print(f'64bit op size ', end=''); co = co + 1; bit64 = True
+        print(f'64bit op size ', end=''); co += 1; bit64 = True
+        byt = self.file[p + co:p + co + 1]
+      elif hex(int.from_bytes(byt)) == '0x66':  # Check if 16bit op
+        print(f'16bit op size ', end=''); co += 1; bit16 = True
         byt = self.file[p+co:p+co+1]
-      if hex(int.from_bytes(byt)) == '0x66':  # Check if 16bit op
-        print(f'16bit op size ', end=''); co = co + 1; bit16 = True
+      elif hex(int.from_bytes(byt)) == '0x49':  # Check if conditional
+        print(f'Conditional ', end=''); co += 1; cond = True
         byt = self.file[p+co:p+co+1]
-      if hex(int.from_bytes(byt)) == '0x83':  # Add / Sub / Cmp
-        x = int.from_bytes(self.file[p+co+1:p+co+2])
-        if   hex(0xf0 & x) == '0xe0': print(f'Add {hex(int.from_bytes(self.file[p+co+1:p+co+3]))}'); byt = self.file[p+co+2:p+co+3]; co += 3;  # Add, read 2
-        elif hex(0xf0 & x) == '0x40': print(f'Add {hex(int.from_bytes(self.file[p+co+1:p+co+4]))}'); byt = self.file[p+co+3:p+co+4]; co += 4;  # Add, read 3
-        elif hex(0xf0 & x) == '0xc0': print(f'Sub {hex(int.from_bytes(self.file[p+co+1:p+co+3]))}'); byt = self.file[p+co+2:p+co+3]; co += 3;  # Sub, read 2
-        elif hex(0xf0 & x) == '0xf0': print(f'Cmp {hex(int.from_bytes(self.file[p+co+1:p+co+3]))}'); byt = self.file[p+co+2:p+co+3]; co += 3;  # Cmp, read 2
-        elif hex(0xf0 & x) == '0x70': print(f'Cmp {hex(int.from_bytes(self.file[p+co+1:p+co+4]))}'); byt = self.file[p+co+3:p+co+4]; co += 4;  # Cmp, read 3
-        elif hex(0xf0 & x) == '0x30': print(f'Cmp {hex(int.from_bytes(self.file[p+co+1:p+co+7]))}'); byt = self.file[p+co+6:p+co+7]; co += 7;  # Cmp, read 6
-        else: print(f'ASC Noop'); byt = self.file[p+co+1:p+co+2]; co += 1
-      elif hex(int.from_bytes(byt)) >= '0xb0' and hex(int.from_bytes(byt)) < '0xb8':  # Mov 32bit
-        print(f'Mov32'); co += 1; byt = self.file[p+co+3:p+co+4]; co += 4
-      elif hex(int.from_bytes(byt)) >= '0xb8' and hex(int.from_bytes(byt)) < '0xc0':  # Mov 64bit
-        print(f'Mov64'); co += 1; byt = self.file[p+co+3:p+co+4]; co += 4
-      elif hex(int.from_bytes(byt)) >= '0x50' and hex(int.from_bytes(byt)) < '0x56':  # Push
-        print(f'Push 1 {reg[int.from_bytes(byt) - 0x50]}'); byt = self.file[p+co:p+co+1]; co += 1;
+      elif hex(int.from_bytes(byt)) == '0x4c':  # Check
+        print(f'4c ', end=''); co += 1;
+        byt = self.file[p+co:p+co+1]
+
+      if bit16:
+        if int.from_bytes(byt) == 0x90:  # Nop
+          print(f'Nop16'); co += 1;
+        elif int.from_bytes(byt) == 0x66:
+          co += 1;
+          while int.from_bytes(self.file[p+co:p+co+1]) == 0x66: co += 1;
+          print(f'Nopw {self.file[p+co:p+co+9]}'); co += 9;
+        else: print(f'Noop')
+
+      elif hex(int.from_bytes(byt)) == '0x83':  # Add / Sub / Cmp
+        co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
+        if   hex(0xf0 & x) == '0xe0': print(f'Sub {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;  # Sub, read 2
+        elif hex(0xf0 & x) == '0x40': print(f'Add {hex(int.from_bytes(self.file[p+co:p+co+4]))}'); co += 4;  # Add, read 3
+        elif hex(0xf0 & x) == '0xc0': print(f'Add {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;  # Add, read 2
+        elif hex(0xf0 & x) == '0xf0': print(f'Cmp {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;  # Cmp, read 2
+        elif hex(0xf0 & x) == '0x70': print(f'Cmp {hex(int.from_bytes(self.file[p+co:p+co+4]))}'); co += 4;  # Cmp, read 3
+        elif hex(0xf0 & x) == '0x30': print(f'Cmp {hex(int.from_bytes(self.file[p+co:p+co+6]))}'); co += 6;  # Cmp, read 6
+        elif hex(0xf0 & x) == '0x80': print(f'Mov {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;  # Mov, read 2
+      elif int.from_bytes(byt) == 0xff:
+        if   int.from_bytes(self.file[p+co+1:p+co+2]) == 0x25:  # Jmp
+          print(f'FF Jmp'); co += 6;
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x35:  # Push
+          print(f'FF Push'); co += 6;
+        else: co += 1
+
+
+      elif hex(int.from_bytes(byt)) == '0xe9':  # Jmp
+        print(f'Jmp {self.file[p+co+1:p+co+5]}'); co += 5
+      elif hex(int.from_bytes(byt)) == '0xeb':  # Jmp
+        print(f'Jmp {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x89':  # Mov
+        print(f'Mov {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x8b':  # Mov
+        print(f'Mov2 {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x63':  # Mov
+        print(f'MovS {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x8d':  # Leaq
+        print(f'Leaq {self.file[p+co+1:p+co+3]}'); co += 3
+      elif hex(int.from_bytes(byt)) == '0x75':  # Jne
+        print(f'Jne {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x74':  # Je
+        print(f'Je {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x72':  # Jb
+        print(f'Jb {self.file[p+co+1:p+co+2]}'); co += 2
+
+      elif hex(int.from_bytes(byt)) == '0x7e':  # Jle
+        print(f'Jle {self.file[p+co+1:p+co+2]}'); co += 2
+      elif hex(int.from_bytes(byt)) == '0x85':  # Test
+        print(f'Test {self.file[p+co+1:p+co+2]}'); co += 2
+
+
+      elif int.from_bytes(byt) >= 0xb0 and int.from_bytes(byt) < 0xb8:  # Mov 32bit
+        print(f'Mov32'); co += 4 #co += 1; co += 4; #byt = self.file[p+co+3:p+co+4]; co += 4
+      elif int.from_bytes(byt) >= 0xb8 and int.from_bytes(byt) < 0xc0:  # Mov 64bit
+        print(f'Mov64'); co += 4;#co += 1; co += 4; #byt = self.file[p+co+3:p+co+4]; co += 4
+
+      elif int.from_bytes(byt) >= 0x50 and int.from_bytes(byt) < 0x56:  # Push
+        print(f'Push 1 {reg[int.from_bytes(byt) - 0x50]}'); co += 1;
       elif hex(int.from_bytes(byt)) == '0x41' and int.from_bytes(self.file[p+co+1:p+co+2]) >= 0x54 and int.from_bytes(self.file[p+co+1:p+co+2]) < 0x58:  # Push
-        print(f'Push 2 {reg[int.from_bytes(self.file[p+co+1:p+co+2]) - 0x48]}'); co += 1; byt = self.file[p+co:p+co+1]; co += 1;
+        print(f'Push 2 {reg[int.from_bytes(self.file[p+co+1:p+co+2]) - 0x48]}'); co += 1; co += 1; #byt = self.file[p+co:p+co+1]; co += 1;
       elif hex(int.from_bytes(byt)) == '0x41' and int.from_bytes(self.file[p+co+1:p+co+2]) >= 0x5c and int.from_bytes(self.file[p+co+1:p+co+2]) <= 0x5f:  # Pop
-        print(f'Pop 2 {reg[int.from_bytes(self.file[p+co+1:p+co+2]) - 0x50]}'); co += 1; byt = self.file[p+co:p+co+1]; co += 1;
-      #elif int.from_bytes(self.file[p+co:p+co+1]) >= 0x58 and int.from_bytes(self.file[p+co:p+co+1]) < 0x60:  # Pop  # TODO: this catches to much
-      #  print(f'Pop 1 {reg[int.from_bytes(byt) - 0x58]} - {byt} : {hex(int.from_bytes(self.file[p+co+1:p+co+4]))}'); byt = self.file[p+co:p+co+1]; co += 1;
+        print(f'Pop 2 {reg[int.from_bytes(self.file[p+co+1:p+co+2]) - 0x50]}'); co += 1; co += 1; #byt = self.file[p+co:p+co+1]; co += 1;
+      elif hex(int.from_bytes(byt)) == '0x68' and int.from_bytes(self.file[p+co+1:p+co+2]) >= 0x00 and int.from_bytes(self.file[p+co+1:p+co+2]) < 0x0f:  # Push
+        print(f'Push 68 {hex(int.from_bytes(self.file[p+co+1:p+co+2]))} : {self.file[p+co+2:p+co+6]} :: {hex(int.from_bytes(byt))}'); co += 2;
+        while int.from_bytes(self.file[p+co:p+co+1]) == 0: co += 1;
+      elif int.from_bytes(byt) >= 0x58 and int.from_bytes(byt) < 0x60:  # Pop  # TODO: this catches to much
+        print(f'Pop 1 {reg[int.from_bytes(byt) - 0x58]} - {byt} : {hex(int.from_bytes(self.file[p+co+1:p+co+4]))}'); co += 1;#byt = self.file[p+co:p+co+1]; co += 1;
       elif hex(int.from_bytes(byt)) == '0xcc':  # int13
-        print(f'Int13'); byt = self.file[p+co:p+co+1]; co += 1;
+        print(f'Int13'); co += 1;
       elif hex(int.from_bytes(byt)) == '0xc3':  # retq
-        print(f'Ret'); byt = self.file[p+co:p+co+1]; co += 1;
-      elif bit16 and hex(int.from_bytes(self.file[p+co:p+co+1])) == '0x90':  # Nop
-        print(f'Nop'); byt = self.file[p+co:p+co+1]; co += 1;
-      elif bit64 or bit16: print(f'Noop')
+        print(f'Ret'); co += 1;
+      elif int.from_bytes(byt) == 0x0f and int.from_bytes(self.file[p+co+1:p+co+2]) == 0x1f:  # Nopl
+        print(f'Nopl'); co += 2;
+        while int.from_bytes(self.file[p+co+1:p+co+2]) == 0x00: co += 1
+      #elif bit16 and int.from_bytes(byt) == 0x66:
+      #  co += 1;
+      #  while int.from_bytes(self.file[p+co:p+co+1]) == 0x66: co += 1;
+      #  print(f'Nopw {self.file[p+co:p+co+9]}'); co += 9;
+      #elif (bit16 and int.from_bytes(byt) == 0x90):  # Nop
+      #  print(f'Nop16'); co += 1;
+      elif int.from_bytes(byt) == 0x90:  # Nop
+        print(f'NopS'); co += 1;
+      #elif bit64 or bit16: print(f'Noop');# co += 1
+      elif bit64: print(f'Noop')
       else: co = co + 1
     return byt
 
