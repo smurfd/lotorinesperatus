@@ -15,6 +15,7 @@ from typing import List, Tuple, Literal
 class Amd64_elf:
   def __init__(self, fn) -> None:
     self.header, self.proghd, self.secthd, self.data, self.file, self.fn = [], [], [], [], [], fn
+    self.hhh = []
     hl, ll, sl = self.get_lengths()
     with open(self.fn, 'rb') as f:
       self.file = f.read(); p1, p2 = 0, hl
@@ -22,6 +23,8 @@ class Amd64_elf:
       self.p = self.file[p1:p2]; p1, p2 = p2, p2 + sl + 3
       self.s = self.file[p1:p2]
       self.d = self.file[p2:]
+      self.hhh = self.file[:1192]
+  def get_hhh(self): return self.hhh
   def get_lengths(self) -> Tuple:
     return 64, 72, 65                              # Length of header, proghd, secthd
   def get_header(self) -> List:                    # [::-1] for big endian
@@ -296,13 +299,14 @@ class Amd64_elf:
 
       if bit16:
         if int.from_bytes(byt) == 0x90: print(f'nop'); co += 1;  # Nop
-        elif int.from_bytes(byt) == 0x66:
+        elif int.from_bytes(byt) == 0x66 or int.from_bytes(byt) == 0x2e:
           co += 1;
           while int.from_bytes(self.file[p+co:p+co+1]) == 0x66: co += 1;
-          print(f'nopw {self.file[p+co:p+co+9]}'); co += 9;
+          print(f'nopw {self.file[p+co:p+co+8]}'); co += 8;
         else: print(f'noop')
       elif chk:
-        if int.from_bytes(byt) == 0x8b: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;  # Mov, read 3
+        if   int.from_bytes(byt) == 0x8b: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;  # Mov, read 3
+        elif int.from_bytes(byt) == 0x39: print(f'cmp {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;  # Cmp, read 2
 
       elif int.from_bytes(byt) == 0x83:  # Add / Sub / Cmp
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
@@ -318,7 +322,15 @@ class Amd64_elf:
         if   int.from_bytes(self.file[p+co+1:p+co+2]) == 0x25: print(f'jmp'); co += 6;                         # Jmp
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x35: print(f'push'); co += 6;                        # Push
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x55: print(f'call'); co += 2;                        # Call
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xe0: print(f'jmp'); co += 3;                        # Call
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xd0: print(f'call'); co += 2;                        # Call
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xc0: print(f'incq'); co += 2;                        # Incq
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xcb: print(f'decq'); co += 2;                        # Incq
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xc5: print(f'incq'); co += 2;                        # Incq
+        else: co += 1
+      elif int.from_bytes(byt) == 0x45:
+        if   int.from_bytes(self.file[p+co+1:p+co+2]) == 0x31: print(f'xor'); co += 2;                         # Jmp
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x85: print(f'test'); co += 2;                        # Push
         else: co += 1
       elif int.from_bytes(byt) == 0x89 and bit64:
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
@@ -331,28 +343,36 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x89 and cond:
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
         if   (0xf0 & x) == 0x0: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;          # Mov, read 1
+        elif (0xf0 & x) == 0xf0: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+1]))}'); co += 1;          # Mov, read 1
       elif int.from_bytes(byt) == 0x0f:
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
         if   (0xf0 & x) == 0x10: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;        # Nopl, read 2
         elif (0xf0 & x) == 0xb0: print(f'movzbl {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;      # Mov, read 3
         elif (0xf0 & x) == 0xa0: print(f'cpuid {hex(int.from_bytes(self.file[p+co:p+co+1]))}'); co += 1;       # cpuid, read 1
-      elif int.from_bytes(byt) == 0x81 and cond:
+      elif int.from_bytes(byt) == 0x81 and (cond or bit64):
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
         if   (0xf0 & x) == 0xf0: print(f'cmp {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;         # Cmp, read 5
+      elif int.from_bytes(byt) == 0x8d and bit64:
+        co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
+        if   (0xf0 & x) == 0x10: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;        # Nopl, read 2
+        elif (0xf0 & x) == 0x00: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;        # Nopl, read 2
+        elif (0xf0 & x) == 0x30: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;        # Nopl, read 2
 
 
-      elif int.from_bytes(byt) == 0xcc: print(f'int13 {self.file[p+co+1:p+co+2]}'); co += 2                    # Int13
-      elif int.from_bytes(byt) == 0xc3: print(f'retq {self.file[p+co+1:p+co+2]}'); co += 2                     # Retq
-      elif int.from_bytes(byt) == 0x8d: print(f'leaq {self.file[p+co+1:p+co+3]}'); co += 3                     # Leaq
+      elif int.from_bytes(byt) == 0xcc: print(f'int13 {self.file[p+co+0:p+co+1]}'); co += 1                    # Int13
+      elif int.from_bytes(byt) == 0xc3: print(f'retq {self.file[p+co+0:p+co+1]}'); co += 1                     # Retq
+      elif int.from_bytes(byt) == 0x39: print(f'cmpq {self.file[p+co+1:p+co+2]}'); co += 2                     # Leaq
       elif int.from_bytes(byt) == 0xe8: print(f'call {self.file[p+co+1:p+co+5]}'); co += 5                     # Call
       elif int.from_bytes(byt) == 0x85: print(f'test {self.file[p+co+1:p+co+2]}'); co += 2                     # Test
 
       elif int.from_bytes(byt) == 0x29: print(f'sub {self.file[p+co+1:p+co+2]}'); co += 2                      # Sub
       elif int.from_bytes(byt) == 0xc1: print(f'sar {self.file[p+co+1:p+co+3]}'); co += 3                      # Sar
+      elif int.from_bytes(byt) == 0xd1: print(f'sar {self.file[p+co+1:p+co+2]}'); co += 2                      # Sar
       elif int.from_bytes(byt) == 0x45: print(f'xor {self.file[p+co+1:p+co+3]}'); co += 3                      # Xor
 
       elif int.from_bytes(byt) == 0xe9: print(f'jmp {self.file[p+co+1:p+co+5]}'); co += 5                      # Jmp
       elif int.from_bytes(byt) == 0xbb: print(f'mov {self.file[p+co+1:p+co+5]}'); co += 5                      # Mov
+      elif int.from_bytes(byt) == 0x01: print(f'add {self.file[p+co+1:p+co+2]}'); co += 2                      # Mov
       elif int.from_bytes(byt) == 0xb9: print(f'mov {self.file[p+co+1:p+co+5]}'); co += 5                      # Mov
       elif int.from_bytes(byt) == 0xeb: print(f'jmp {self.file[p+co+1:p+co+2]}'); co += 2                      # Jmp
       elif int.from_bytes(byt) == 0x89: print(f'mov {self.file[p+co+1:p+co+2]}'); co += 2                      # Mov
@@ -362,6 +382,8 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x7e: print(f'jle {self.file[p+co+1:p+co+2]}'); co += 2                      # Jle
       elif int.from_bytes(byt) == 0x73: print(f'jae {self.file[p+co+1:p+co+2]}'); co += 2                      # Jae
       elif int.from_bytes(byt) == 0x31: print(f'xor {self.file[p+co+1:p+co+2]}'); co += 2                      # Xor
+      elif int.from_bytes(byt) == 0x80: print(f'cmp {self.file[p+co+1:p+co+7]}'); co += 7                       # Jb
+      elif int.from_bytes(byt) == 0xc6: print(f'mov {self.file[p+co+1:p+co+7]}'); co += 7                       # Jb
       elif int.from_bytes(byt) == 0x74: print(f'je {self.file[p+co+1:p+co+2]}'); co += 2                       # Je
       elif int.from_bytes(byt) == 0x72: print(f'jb {self.file[p+co+1:p+co+2]}'); co += 2                       # Jb
 

@@ -32,6 +32,7 @@ def read_amd_elf_hello() -> None:
   amd.print_hex(amd.bytes2hex(amd_header))
   amd.print_hex(amd.bytes2hex(amd_header_program))
   amd.print_hex(amd.bytes2hex(amd_header_section))
+  amd.print_hex(amd.bytes2hex(amd.asm.get_hhh()))
   amd.print_hex(amd.bytes2hex(amd_data))
   [print(f'Header {amd.hex2str(amd_header[i])}') for i in range(len(amd_header))]
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
