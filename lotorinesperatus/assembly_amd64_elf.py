@@ -298,7 +298,9 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x4d: print(f'4d ', end=''); co += 1; chk = True; byt = self.file[p+co:p+co+1]                     # Check
 
       if bit16:
+        x = int.from_bytes(self.file[p+co+1:p+co+2]); y = int.from_bytes(self.file[p+co+2:p+co+3])
         if int.from_bytes(byt) == 0x90: print(f'nop'); co += 1;  # Nop
+        elif  int.from_bytes(byt) == 0x0f and (0xf0 & x) == 0x10 and (0xf0 & y) == 0x40: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;        # Nopl, read 2
         elif int.from_bytes(byt) == 0x66 or int.from_bytes(byt) == 0x2e:
           co += 1;
           while int.from_bytes(self.file[p+co:p+co+1]) == 0x66: co += 1;
@@ -322,7 +324,7 @@ class Amd64_elf:
         if   int.from_bytes(self.file[p+co+1:p+co+2]) == 0x25: print(f'jmp'); co += 6;                         # Jmp
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x35: print(f'push'); co += 6;                        # Push
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0x55: print(f'call'); co += 2;                        # Call
-        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xe0: print(f'jmp'); co += 3;                        # Call
+        elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xe0: print(f'jmp'); co += 2;                        # Call
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xd0: print(f'call'); co += 2;                        # Call
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xc0: print(f'incq'); co += 2;                        # Incq
         elif int.from_bytes(self.file[p+co+1:p+co+2]) == 0xcb: print(f'decq'); co += 2;                        # Incq
@@ -341,12 +343,14 @@ class Amd64_elf:
         elif (0xf0 & x) == 0x10: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;         # Mov, read 5
         elif (0xf0 & x) == 0x0:  print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;         # Mov, read 5
       elif int.from_bytes(byt) == 0x89 and cond:
-        co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
+        co += 1; x = int.from_bytes(self.file[p+co:p+co+1]);
         if   (0xf0 & x) == 0x0: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;          # Mov, read 1
         elif (0xf0 & x) == 0xf0: print(f'mov {hex(int.from_bytes(self.file[p+co:p+co+1]))}'); co += 1;          # Mov, read 1
       elif int.from_bytes(byt) == 0x0f:
-        co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
-        if   (0xf0 & x) == 0x10: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;        # Nopl, read 2
+        co += 1; x = int.from_bytes(self.file[p+co:p+co+1]); y = int.from_bytes(self.file[p+co+1:p+co+2])
+        if   (0xf0 & x) == 0x10 and (0xf0 & y) == 0x40: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;        # Nopl, read 2
+        elif (0xf0 & x) == 0x10 and (0xf0 & y) == 0x80: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;        # Nopl, read 2
+        elif (0xf0 & x) == 0x10 and (0xf0 & y) == 0x0: print(f'nopl {hex(int.from_bytes(self.file[p+co:p+co+1]))}'); co += 1;        # Nopl, read 2
         elif (0xf0 & x) == 0xb0: print(f'movzbl {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;      # Mov, read 3
         elif (0xf0 & x) == 0xa0: print(f'cpuid {hex(int.from_bytes(self.file[p+co:p+co+1]))}'); co += 1;       # cpuid, read 1
       elif int.from_bytes(byt) == 0x81 and (cond or bit64):
@@ -354,7 +358,7 @@ class Amd64_elf:
         if   (0xf0 & x) == 0xf0: print(f'cmp {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;         # Cmp, read 5
       elif int.from_bytes(byt) == 0x8d and bit64:
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
-        if   (0xf0 & x) == 0x10: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+3]))}'); co += 3;        # Nopl, read 2
+        if   (0xf0 & x) == 0x10: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+2]))}'); co += 2;        # Nopl, read 2
         elif (0xf0 & x) == 0x00: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;        # Nopl, read 2
         elif (0xf0 & x) == 0x30: print(f'leaq {hex(int.from_bytes(self.file[p+co:p+co+5]))}'); co += 5;        # Nopl, read 2
 
