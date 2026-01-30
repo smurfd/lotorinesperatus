@@ -40,7 +40,9 @@ def read_amd_elf_hello() -> None:
   h, bi, a, b = amd.asm.get_assembly(1)
   [print(f'Amd Asm hello: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('////')
-  print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
+  print(f'{amd.asm.get_assembly_correctly()}')
+  
+  #print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
   print('--- amd64 elf header ---')
 def read_arm_macho_func() -> None:
   print('--- arm64 macho header ---')
@@ -77,7 +79,8 @@ def read_amd_elf_func() -> None:
   h, bi, a, b = amd.asm.get_assembly(2)
   [print(f'Amd Asm func: {h[i]} {bi[i]} {a[i]}') for i in range(len(h))]
   print('////')
-  print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
+  print(f'{amd.asm.get_assembly_correctly()}')
+  #print(f'{hex(int.from_bytes(amd.asm.get_assembly_correctly()))}')
   print('--- amd64 elf header ---')
 def read_helloamd_objdump() -> None:
   hamd = Objdump('lotorinesperatus/test/examples/hello_amd64_elf.objdump').get()
@@ -87,10 +90,12 @@ def read_helloamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   h, bi, a, b = amd.asm.get_assembly(1)
+  asmc = amd.asm.get_assembly_correctly()
   c = 0
   for i,f in enumerate(hamd):
     if f[0] == 'file format elf64-x86-64': c = -1; continue
     assert f[0] == a[i+c].split(' ')[0]
+    assert f[0][:3] == asmc[i - 1].split(' ')[0][:3]  # Read first 3 letters in op since we have not figured out the sufix, like movQ, movL etc.
     if c < 0 and i > 2: c = 0
 def read_helloarm_objdump() -> None:
   harm = Objdump('lotorinesperatus/test/examples/hello_arm64_macho.objdump').get()
@@ -110,6 +115,7 @@ def read_funcamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   h, bi, a, b = amd.asm.get_assembly(2)
+  asmc = amd.asm.get_assembly_correctly()
   c = 0
   for i,f in enumerate(famd):
     if f[0] == 'file format elf64-x86-64': c = -1; continue
