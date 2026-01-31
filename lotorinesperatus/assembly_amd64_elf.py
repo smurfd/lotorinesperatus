@@ -312,7 +312,7 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x83:  # Add / Sub / Cmp
         co += 1; x = int.from_bytes(self.file[p+co:p+co+1])
         if   (0xf0 & x) == 0xe0: ins.append(f'sub{px} {self.rx(p + co, 2)}'); co += 2                                                               # Sub, read 2
-        elif (0xf0 & x) == 0x40: ins.append(f'add{px} {self.rx(p + co, 4)}'); co += 4                                                               # Add, read 4
+        elif (0xf0 & x) == 0x40: ins.append(f'add{px} {self.rx(p + co, 3)}'); co += 3                                                               # Add, read 4
         elif (0xf0 & x) == 0xc0: ins.append(f'add{px} {self.rx(p + co, 2)}'); co += 2                                                               # Add, read 2
         elif (0xf0 & x) == 0xf0: ins.append(f'cmp{px} {self.rx(p + co, 2)}'); co += 2                                                               # Cmp, read 2
         elif (0xf0 & x) == 0xd0: ins.append(f'adc{px} {self.rx(p + co, 2)}'); co += 2                                                               # Adc, read 2
@@ -339,6 +339,7 @@ class Amd64_elf:
         elif (0xf0 & x) == 0xe0: ins.append(f'mov{px} {self.rx(p + co, 1)}'); co += 1                                                               # Mov, read 1
         elif (0xf0 & x) == 0xf0: ins.append(f'mov{px} {self.rx(p + co, 1)}'); co += 1                                                               # Mov, read 1
         elif (0xf0 & x) == 0x50: ins.append(f'mov{px} {self.rx(p + co, 2)}'); co += 2                                                               # Mov, read 2
+        elif (0xf0 & x) == 0x70: ins.append(f'mov{px} {self.rx(p + co, 2)}'); co += 2                                                               # Mov, read 2
         elif (0xf0 & x) == 0x10: ins.append(f'mov{px} {self.rx(p + co, 5)}'); co += 5                                                               # Mov, read 5
         elif (0xf0 & x) == 0x0:  ins.append(f'mov{px} {self.rx(p + co, 5)}'); co += 5                                                               # Mov, read 5
       elif int.from_bytes(byt) == 0x89 and cond:
@@ -366,6 +367,7 @@ class Amd64_elf:
         elif (0xf0 & x) == 0xf0: ins.append(f'sar{px} {self.rx(p + co, 3)}'); co += 2                                                               # Sar
       elif int.from_bytes(byt) == 0xcc: ins.append(f'int13{px} {self.rx(p + co, 1)}'); co += 1                                                      # Int13
       elif int.from_bytes(byt) == 0xc3: ins.append(f'retq{px} {self.rx(p + co, 1)}'); co += 1                                                       # Retq
+      elif int.from_bytes(byt) == 0x98: ins.append(f'cltq{px} {self.rx(p + co, 1)}'); co += 1                                                       # Retq
       elif int.from_bytes(byt) == 0x39: ins.append(f'cmpq{px} {self.rx(p + co, 2)}'); co += 2                                                       # Cmpq
       elif int.from_bytes(byt) == 0xe8: ins.append(f'call{px} {self.rx(p + co, 5)}'); co += 5                                                       # Call
       elif int.from_bytes(byt) == 0x85: ins.append(f'test{px} {self.rx(p + co, 2)}'); co += 2                                                       # Test
@@ -374,11 +376,11 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x45: ins.append(f'xor{px} {self.rx(p + co, 3)}'); co += 3                                                        # Xor
       elif int.from_bytes(byt) == 0xe9: ins.append(f'jmp{px} {self.rx(p + co, 5)}'); co += 5                                                        # Jmp
       elif int.from_bytes(byt) == 0xbb: ins.append(f'mov{px} {self.rx(p + co, 5)}'); co += 5                                                        # Mov
-      elif int.from_bytes(byt) == 0x01: ins.append(f'add{px} {self.rx(p + co, 2)}'); co += 2                                                        # Mov
+      elif int.from_bytes(byt) == 0x01: ins.append(f'add{px} {self.rx(p + co, 3)}'); co += 3                                                        # Mov
       elif int.from_bytes(byt) == 0xb9: ins.append(f'mov{px} {self.rx(p + co, 5)}'); co += 5                                                        # Mov
       elif int.from_bytes(byt) == 0xeb: ins.append(f'jmp{px} {self.rx(p + co, 2)}'); co += 2                                                        # Jmp
       elif int.from_bytes(byt) == 0x89: ins.append(f'mov{px} {self.rx(p + co, 2)}'); co += 2                                                        # Mov
-      elif int.from_bytes(byt) == 0x8b: ins.append(f'mov{px} {self.rx(p + co, 2)}'); co += 2                                                        # Mov
+      elif int.from_bytes(byt) == 0x8b: ins.append(f'mov{px} {self.rx(p + co, 3)}'); co += 3                                                        # Mov
       elif int.from_bytes(byt) == 0x63: ins.append(f'mov{px} {self.rx(p + co, 2)}'); co += 2                                                        # Mov
       elif int.from_bytes(byt) == 0x75: ins.append(f'jne{px} {self.rx(p + co, 2)}'); co += 2                                                        # Jne
       elif int.from_bytes(byt) == 0x7e: ins.append(f'jle{px} {self.rx(p + co, 2)}'); co += 2                                                        # Jle
@@ -386,6 +388,7 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x31: ins.append(f'xor{px} {self.rx(p + co, 2)}'); co += 2                                                        # Xor
       elif int.from_bytes(byt) == 0x80: ins.append(f'cmp{px} {self.rx(p + co, 7)}'); co += 7                                                        # Jb
       elif int.from_bytes(byt) == 0xc6: ins.append(f'mov{px} {self.rx(p + co, 7)}'); co += 7                                                        # Jb
+      elif int.from_bytes(byt) == 0xc7: ins.append(f'mov{px} {self.rx(p + co, 7)}'); co += 7                                                        # Jb
       elif int.from_bytes(byt) == 0x74: ins.append(f'je{px} {self.rx(p + co, 2)}'); co += 2                                                         # Je
       elif int.from_bytes(byt) == 0x72: ins.append(f'jb{px} {self.rx(p + co, 2)}'); co += 2                                                         # Jb
       elif int.from_bytes(byt) >= 0xb0 and int.from_bytes(byt) < 0xb8: ins.append(f'mov{px} {self.rx(p + co, 4)}'); co += 4                         # Mov 32bit
