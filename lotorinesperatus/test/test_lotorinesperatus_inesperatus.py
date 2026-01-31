@@ -81,11 +81,9 @@ def read_helloamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   asmc = amd.asm.get_assembly_correctly()
-  c = 0
   for i,f in enumerate(hamd):
-    if f[0] == 'file format elf64-x86-64': c = -1; continue
+    if f[0] == 'file format elf64-x86-64': continue
     assert f[0][:3] == asmc[i - 1].split(' ')[0][:3]  # Read first 3 letters in op since we have not figured out the sufix, like movQ, movL etc.
-    if c < 0 and i > 2: c = 0
 def read_helloarm_objdump() -> None:
   harm = Objdump('lotorinesperatus/test/examples/hello_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/hello_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
@@ -104,12 +102,10 @@ def read_funcamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   asmc = amd.asm.get_assembly_correctly()  # TODO: fetch all data
-  c = 0
   for i,f in enumerate(famd):
-    if f[0] == 'file format elf64-x86-64': c = -1; continue
+    if f[0] == 'file format elf64-x86-64': continue
     if i > len(asmc): break  # We dont fetch enough
     assert f[0][:3] == asmc[i - 1].split(' ')[0][:3]  # Read first 3 letters in op since we have not figured out the sufix, like movQ, movL etc.
-    if c < 0 and i > 2: c = 0
 def read_funcarm_objdump() -> None:
   farm = Objdump('lotorinesperatus/test/examples/func_arm64_macho.objdump').get()
   arm = Assembly(f'{os.path.dirname(os.path.realpath(__file__))}/examples/func_arm64_macho.bin', arch='arm64', flavour='arm64', binfmt='macho')
