@@ -10,23 +10,20 @@ from typing import List, Tuple, Literal
 # https://notes.eatonphil.com/emulating-amd64-starting-with-elf.html
 # https://wiki.osdev.org/X86-64_Instruction_Encoding#Registers
 # http://ref.x86asm.net/coder64.html << ---
-
+# https://stackoverflow.com/questions/15352547/get-elf-sections-offsets # this helped me understand what i had done wrong
 
 class Amd64_elf:
   def __init__(self, fn) -> None:
     self.header, self.proghd, self.secthd, self.data, self.file, self.fn = [], [], [], [], [], fn
-    self.hhh = []
     hl, ll, sl = self.get_lengths()
-    with open(self.fn, 'rb') as f:
-      self.file = f.read(); p1, p2 = 0, hl
-      self.h = self.file[p1:p2]; p1, p2 = hl, hl + ll
-      self.p = self.file[p1:p2]; p1, p2 = p2, p2 + sl + 3
-      self.s = self.file[p1:p2]
-      self.d = self.file[p2:]
-      self.hhh = self.file[:1192]
-  def get_hhh(self): return self.hhh
+    with open(self.fn, 'rb') as f: self.file = f.read()
+    p1, p2 = 0, hl
+    self.h = self.file[p1:p2]; p1, p2 = hl, hl + ll
+    self.p = self.file[p1:p2]; p1, p2 = p2, p2 + sl + 3
+    self.s = self.file[p1:p2]
+    self.d = self.file[p2:]
   def get_lengths(self) -> Tuple:
-    return 64, 72, 65                              # Length of header, proghd, secthd
+    return 64, 56, 65                              # Length of header, proghd, secthd
   def get_header(self) -> List:                    # [::-1] for big endian
     self.header.append(self.h[ 0: 4])              # Magic number
     self.header.append(self.h[ 4: 5])              # 32bit or 64bit
@@ -56,8 +53,8 @@ class Amd64_elf:
     self.proghd.append(self.p[16:24])              # Virtual Address of the segment in memory
     self.proghd.append(self.p[24:32])              # Segments physical address
     self.proghd.append(self.p[32:40])              # Size in bytes of the segment in file image
-    self.proghd.append(self.p[56:64])              # Size in bytes of the segment in memory
-    self.proghd.append(self.p[64:72])              # Alignment
+    self.proghd.append(self.p[40:48])              # Size in bytes of the segment in memory
+    self.proghd.append(self.p[48:56])              # Alignment
     return self.proghd
   def get_header_section(self) -> List:
     self.secthd.append(self.s[ 0: 4])              # Offset to name string
