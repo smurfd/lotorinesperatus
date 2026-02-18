@@ -37,7 +37,7 @@ def read_amd_elf_hello() -> None:
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
   init, fini, rodata = amd.asm.get_segment_positions()
-  hx, bi, asm, by = amd.asm.get_assembly_correctly(init, rodata, data=amd.asm.file[init:rodata])
+  hx, bi, asm, by = amd.asm.get_assembly(init, rodata, data=amd.asm.file[init:rodata])
   print(asm)
   print('--- amd64 elf header ---')
 def read_arm_macho_func() -> None:
@@ -73,7 +73,7 @@ def read_amd_elf_func() -> None:
   [print(f'Program {amd.hex2str(amd_header_program[i])}') for i in range(len(amd_header_program))]
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
   init, fini, rodata = amd.asm.get_segment_positions()
-  hx, bi, asm, by = amd.asm.get_assembly_correctly(init, rodata, data=amd.asm.file[init:rodata])
+  hx, bi, asm, by = amd.asm.get_assembly(init, rodata, data=amd.asm.file[init:rodata])
   print(asm)
   print('--- amd64 elf header ---')
 def read_helloamd_objdump() -> None:
@@ -84,7 +84,7 @@ def read_helloamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   init, fini, rodata = amd.asm.get_segment_positions()
-  hx, bi, asmc, by = amd.asm.get_assembly_correctly(init, rodata, data=amd.asm.file[init:rodata])
+  hx, bi, asmc, by = amd.asm.get_assembly(init, rodata, data=amd.asm.file[init:rodata])
   for i,f in enumerate(hamd):
     if f[0] == 'file format elf64-x86-64': continue
     assert f[0][:3] == asmc[i - 1].split(' ')[0][:3]  # Read first 3 letters in op since we have not figured out the sufix, like movQ, movL etc.
@@ -106,7 +106,7 @@ def read_funcamd_objdump() -> None:
   amd_header_section = amd.asm.get_header_section()
   amd_data           = amd.asm.get_data()
   init, fini, rodata = amd.asm.get_segment_positions()
-  hx, bi, asmc, by = amd.asm.get_assembly_correctly(init, rodata, data=amd.asm.file[init:rodata])
+  hx, bi, asmc, by = amd.asm.get_assembly(init, rodata, data=amd.asm.file[init:rodata])
   for i,f in enumerate(famd):
     if f[0] == 'file format elf64-x86-64': continue
     assert f[0][:3] == asmc[i - 1].split(' ')[0][:3]  # Read first 3 letters in op since we have not figured out the sufix, like movQ, movL etc.
