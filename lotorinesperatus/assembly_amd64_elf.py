@@ -24,7 +24,6 @@ class Amd64_elf:
     self.s = self.file[p1:p2]
     self.d = self.file[p2:]
   def get_lengths(self) -> Tuple:
-# ------------------------------------------------------------------------------------------------------------------------------------------------- #
     return 64, 56, 65                                                                                                                               # Length of header, proghd, secthd
   def get_header(self) -> List:                                                                                                                     # [::-1] for big endian
     self.header.append(self.h[ 0: 4])                                                                                                               # Magic number
@@ -73,48 +72,27 @@ class Amd64_elf:
   def get_data(self) -> bytes:
     self.data = self.d
     return self.data
-  def get_register(self, ins, b, nr, d = 0):
-    reg, d = [['101', f'%rsp'], ['011', f'%rsp'], ['010', f'%rbp'], ['001', f'%rbx'], ['000', f'%rax']], 0
-    b, i = bin(int.from_bytes(b)), 0
-    if   len(b) > 33 and len(b) < 56: j = 2  # jump steps between instructions
-    elif len(b) > 56 and len(b) < 65: j = 0
-    elif len(b) == 65: j = 3
-    else: j = 0
-    if   ins == 'pushq': i = 0 + (nr * 3)
-    elif ins == 'movq':  # if d == 1, means we cant move from one register to the same register
-      if j:
-        i = (len(b) // 2) - 5 + (nr * 3) - (j + (2 - nr)) - int(not nr)
-        if len(b) == 65 and not nr: [d := 1 if k[0] in b[i + 2:i + 5] else None for k in reg]
-      else:
-        if   len(b) == 33 and nr: i = (len(b) // 2) - 5 + (nr * 3) - nr
-        elif len(b) == 33 and not nr: i = (len(b) // 2) - 5 + (nr * 3) + int(not(nr))
-        elif len(b) == 57:
-          i = (len(b) // 2) - 5 + (nr * 3) + (len(b) // 5) - 4
-          if b[i + 2:i + 5] == b[i + 5:i + 8]: d = 1
-        else: i = (len(b) // 2) - 5 + (nr * 3)
-    elif ins == 'decq': i = (len(b) // 2) + 2 + (nr * 3)
-    elif ins == 'incq': i = (len(b) // 2) + 2 + (nr * 3)
-    elif ins == 'jmpq': i = (len(b) // 2) - 1 + (nr * 3)
-    if   d == 0 and b[5 + i:8 + i] == '101': return f'%rsp'  # d for duplicate
-    elif d == 0 and b[5 + i:8 + i] == '011': return f'%rsp'
-    elif d == 1 and b[5 + i:8 + i] == '010': return f'%rsp'
-    elif d == 0 and b[5 + i:8 + i] == '010': return f'%rbp'
-    elif d == 1 and b[5 + i:8 + i] == '101': return f'%rbp'
-    elif d == 0 and b[5 + i:8 + i] == '001': return f'%rbx'
-    elif d == 0 and b[5 + i:8 + i] == '000': return f'%rax'
-  def rx(self, p, i, file=None): [file := self.file if not file else file]; return hex(int.from_bytes(file[p:p + i]))  # Return hex
   def rr(self, ins, asm, l):  # Return register
-    asm.append(f'{ins} {hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))}')
+    if ins in ['nop', 'retq']: asm.append(f'{ins}'); self.file_counter += l; return asm
+    x = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))
+    r1, r2 = x[4:6], x[2:4]
+    if r2 in ['ec', 'c4']: r2 = f'%rsp'
+    elif r2 in ['e5']: r2 = f'%rsp, %rbp'
+
+    if ins in ['pushq', 'popq'] and not l == 6: asm.append(f'{ins} 0x{r1}')
+    elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
+    else: asm.append(f'{ins} {r2}')
     self.file_counter += l
     return asm
   def get_assembly(self, start, end, data=None) -> List:
-    reg = ['rax', 'rcx', 'rdx', 'rbx', 'rsp', 'rbp', 'rsi', 'rdi', 'r8', 'r9', 'r10', 'r11', 'r12', 'r13', 'r14', 'r15']
+    reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
     byt, self.file_counter, p, maxco, f, hx, bi, ins, b = b'', 0, start, end, self.file, [], [], [], []
     if data: maxco, p, f = len(data), 0, data
     self.asm_init, self.asm_end, self.asm_data = p, maxco, f
     while self.file_counter + p < maxco:
       bit16, bit64, cond, chk, byt, px = False, False, False, False, f[p + self.file_counter:p + self.file_counter + 1], ''
       # TODO: movq instead of mov, for 64bit, movl for 32bit etc...
+      if   int.from_bytes(byt) in [0x41, 0x48, 0xff, 0x68]: px = 'q'
       if   int.from_bytes(byt) == 0x48: self.file_counter += 1; bit64 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 64bit op
       elif int.from_bytes(byt) == 0x66: self.file_counter += 1; bit16 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 16bit op
       elif int.from_bytes(byt) == 0x49: self.file_counter += 1; cond = True; byt = f[p + self.file_counter:p + self.file_counter + 1]               # Conditional

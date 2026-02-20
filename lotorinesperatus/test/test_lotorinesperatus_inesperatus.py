@@ -74,7 +74,8 @@ def read_amd_elf_func() -> None:
   [print(f'Section {amd.hex2str(amd_header_section[i])}') for i in range(len(amd_header_section))]
   init, fini, rodata = amd.asm.get_segment_positions()
   hx, bi, asm, by = amd.asm.get_assembly(init, rodata, data=amd.asm.file[init:rodata])
-  print(asm)
+  for a in asm: print(f'asm {a}')
+  #print(asm)
   print('--- amd64 elf header ---')
 def read_helloamd_objdump() -> None:
   hamd = Objdump('lotorinesperatus/test/examples/hello_amd64_elf.objdump').get()
