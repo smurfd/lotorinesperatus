@@ -73,13 +73,18 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def rr(self, ins, asm, l):  # Return register
+    reg = ['%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15', '_', '_', '_', '_', '_', '%rbp', '%rbp']
+    ereg= ['%eax']
     if ins in ['nop', 'retq', 'cltq', 'int13']: asm.append(f'{ins}'); self.file_counter += l; return asm
     x = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))
     r1, r2 = x[4:6], x[2:4]
     if r2 in ['ec', 'c4']: r2 = f'%rsp'
     elif r2 in ['e5']: r2 = f'%rsp, %rbp'
-
-    if ins in ['pushq', 'popq'] and not l == 6: asm.append(f'{ins} 0x{r1}')
+    if ins in ['pushq', 'popq'] and not l == 6:
+      if not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16)-0x50]
+      asm.append(f'{ins} {r2}')
+    elif ins in ['movb', 'movl', 'movq']: asm.append(f'{ins} {r1} {r2}')
+    #  if r2 in range(0x0, 0x10): r2 = ereg[int(f'0x{r2}', 16)]; asm.append(f'{ins} {r2}')
     elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
     else: asm.append(f'{ins} {r2}')
     self.file_counter += l
@@ -197,15 +202,15 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0xc7: ins = self.rr(f'mov{sx}', ins, 7)                                                                           # Jb
       elif int.from_bytes(byt) == 0x74: ins = self.rr(f'je{sx}', ins, 2)                                                                            # Je
       elif int.from_bytes(byt) == 0x72: ins = self.rr(f'jb{sx}', ins, 2)                                                                            # Jb
-      elif int.from_bytes(byt) >= 0xb0 and int.from_bytes(byt) < 0xb8: ins = self.rr(f'mov{sx}', ins, 4)                                            # Mov 32bit
-      elif int.from_bytes(byt) >= 0xb8 and int.from_bytes(byt) < 0xc0: ins = self.rr(f'mov{sx}', ins, 4)                                            # Mov 64bit
-      elif int.from_bytes(byt) >= 0x54 and int.from_bytes(byt) < 0x58 and cond: ins.append(f'push{sx} {reg[int.from_bytes(byt) - 0x48]}'); self.file_counter += 1  # Push
-      elif int.from_bytes(byt) >= 0x50 and int.from_bytes(byt) < 0x56: ins.append(f'push{sx} {reg[int.from_bytes(byt) - 0x50]}'); self.file_counter += 1           # Push
-      elif int.from_bytes(byt) >= 0x5c and int.from_bytes(byt) <= 0x5f: ins.append(f'pop{sx} {reg[int.from_bytes(byt) - 0x58]}'); self.file_counter += 1           # Pop
+      elif int.from_bytes(byt) in [i for i in range(0xb0, 0xb8)]: ins = self.rr(f'mov{sx}', ins, 4)                                                 # Mov 32bit
+      elif int.from_bytes(byt) in [i for i in range(0xb8, 0xc0)]: ins = self.rr(f'mov{sx}', ins, 4)                                                 # Mov 64bit
+      elif int.from_bytes(byt) in [i for i in range(0x54, 0x58)] and cond: ins = self.rr(f'push{sx}', ins, 1)                                       # Push
+      elif int.from_bytes(byt) in [i for i in range(0x50, 0x56)]: ins = self.rr(f'push{sx}', ins, 1)                                                # Push
+      elif int.from_bytes(byt) in [i for i in range(0x5c, 0x60)]: ins = self.rr(f'pop{sx}', ins, 1)                                                 # Pop
       elif int.from_bytes(byt) == 0x68 and int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) >= 0x00 and int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) < 0x0f:
         ins = self.rr(f'push{sx}', ins, 2)                                                                                                          # Push
         while int.from_bytes(f[p + self.file_counter:p + self.file_counter + 1]) == 0: self.file_counter += 1;
-      elif int.from_bytes(byt) >= 0x58 and int.from_bytes(byt) < 0x60: ins.append(f'pop{sx} {reg[int.from_bytes(byt) - 0x58]}'); self.file_counter += 1            # Pop
+      elif int.from_bytes(byt) >= 0x58 and int.from_bytes(byt) < 0x60: ins.append(f'pop{sx} {reg[int.from_bytes(byt) - 0x58]}'); self.file_counter += 1 # Pop
       elif int.from_bytes(byt) == 0x0f and int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) == 0x1f:                          # Nopl
         ins = self.rr(f'nop{sx}', ins, 2)
         while int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) == 0x00: self.file_counter += 1
