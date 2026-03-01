@@ -15,7 +15,7 @@ from typing import List, Tuple, Literal
 class Amd64_elf:
   def __init__(self, fn) -> None:
     self.header, self.proghd, self.secthd, self.data, self.file, self.fn = [], [], [], [], [], fn
-    self.asm_init, self.asm_end, self.asm_data, self.file_counter = 0, 0, b'', 0
+    self.asm_init, self.asm_end, self.asm_data, self.file_counter, self.flags = 0, 0, b'', 0, None
     hl, ll, sl = self.get_lengths()
     with open(self.fn, 'rb') as f: self.file = f.read()
     p1, p2 = 0, hl
@@ -73,18 +73,22 @@ class Amd64_elf:
     self.data = self.d
     return self.data
   def rr(self, ins, asm, l):  # Return register
-    reg = ['%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15', '_', '_', '_', '_', '_', '%rbp', '%rbp']
+    reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
     ereg= ['%eax']
     if ins in ['nop', 'retq', 'cltq', 'int13']: asm.append(f'{ins}'); self.file_counter += l; return asm
     x = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))
     r1, r2 = x[4:6], x[2:4]
     if r2 in ['ec', 'c4']: r2 = f'%rsp'
-    elif r2 in ['e5']: r2 = f'%rsp, %rbp'
+    elif r2 in ['e5']: r2 = f'%rsp, %rbp' # TODO why extra space before this?
     if ins in ['pushq', 'popq'] and not l == 6:
-      if not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16)-0x50]
+      if self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x48]
+      elif self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'popq': r2 = reg[int(f'0x{r2}', 16) - 0x50]
+      elif int(f'0x{r2}', 16) < 0x60 and ins == 'popq': r2 = reg[int(f'0x{r2}', 16) - 0x58]
+      elif int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x50]
+      elif not r1 and l == 1: r2 = reg[int(f'0x{r2}', 16) - 0x50]
+      elif not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16) - 0x50]
       asm.append(f'{ins} {r2}')
     elif ins in ['movb', 'movl', 'movq']: asm.append(f'{ins} {r1} {r2}')
-    #  if r2 in range(0x0, 0x10): r2 = ereg[int(f'0x{r2}', 16)]; asm.append(f'{ins} {r2}')
     elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
     else: asm.append(f'{ins} {r2}')
     self.file_counter += l
@@ -96,7 +100,7 @@ class Amd64_elf:
     self.asm_init, self.asm_end, self.asm_data = p, maxco, f
     while self.file_counter + p < maxco:
       bit16, bit64, cond, chk, byt, sx = False, False, False, False, f[p + self.file_counter:p + self.file_counter + 1], ''
-      if   int.from_bytes(byt) in [0x41, 0x48, 0xff, 0x68, 0xc3, 0x5d, 0x55, 0xe8]: sx = 'q'
+      if   int.from_bytes(byt) in [0x41, 0x48, 0xff, 0x68, 0xc3, 0x5b, 0x5d, 0x55, 0xe8, 0x50, 0x53]: sx = 'q'
       elif int.from_bytes(byt) in [0x89, 0xb8, 0xbf, 0x83, 0x8b, 0xc7, 0x0f]: sx = 'l'
       elif int.from_bytes(byt) in [0x66]: sx = 'w'
       elif int.from_bytes(byt) in [0x80, 0xc6]: sx = 'b'
@@ -106,6 +110,7 @@ class Amd64_elf:
       elif int.from_bytes(byt) == 0x41: self.file_counter += 1; cond = True; byt = f[p + self.file_counter:p + self.file_counter + 1]               # Conditional
       elif int.from_bytes(byt) == 0x4c: self.file_counter += 1; byt = f[p + self.file_counter:p + self.file_counter + 1]                            # Check
       elif int.from_bytes(byt) == 0x4d: self.file_counter += 1; chk = True; byt = f[p + self.file_counter:p + self.file_counter + 1]                # Check
+      self.flags = {'bit64':bit64, 'bit16':bit16, 'cond':cond, 'chk':chk}
       if bit16:
         x = int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2])
         y = int.from_bytes(f[p + self.file_counter + 2:p + self.file_counter + 3])
@@ -206,6 +211,7 @@ class Amd64_elf:
       elif int.from_bytes(byt) in [i for i in range(0xb8, 0xc0)]: ins = self.rr(f'mov{sx}', ins, 4)                                                 # Mov 64bit
       elif int.from_bytes(byt) in [i for i in range(0x54, 0x58)] and cond: ins = self.rr(f'push{sx}', ins, 1)                                       # Push
       elif int.from_bytes(byt) in [i for i in range(0x50, 0x56)]: ins = self.rr(f'push{sx}', ins, 1)                                                # Push
+      elif int.from_bytes(byt) in [i for i in range(0x5b, 0x5e)] and cond: ins = self.rr(f'pop{sx}', ins, 1)                                                 # Pop
       elif int.from_bytes(byt) in [i for i in range(0x5c, 0x60)]: ins = self.rr(f'pop{sx}', ins, 1)                                                 # Pop
       elif int.from_bytes(byt) == 0x68 and int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) >= 0x00 and int.from_bytes(f[p + self.file_counter + 1:p + self.file_counter + 2]) < 0x0f:
         ins = self.rr(f'push{sx}', ins, 2)                                                                                                          # Push
