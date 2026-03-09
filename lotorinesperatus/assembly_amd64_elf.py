@@ -74,12 +74,17 @@ class Amd64_elf:
     return self.data
   def rr(self, ins, asm, l):  # Return register
     reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
+    regg= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '%rbx', 11, 12, '%rdx', '%rdi', '%r14']
     ereg= ['%eax']
     if ins in ['nop', 'retq', 'cltq', 'int13']: asm.append(f'{ins}'); self.file_counter += l; return asm
     x = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))
+    y = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter - 2:self.asm_init + self.file_counter + l]))
     r1, r2 = x[4:6], x[2:4]
+    s1, s2, s3 = y[4:6], y[2:4], y[6:8]
     if r2 in ['ec', 'c4']: r2 = f'%rsp'
-    elif r2 in ['e5']: r2 = f'%rsp, %rbp' # TODO why extra space before this?
+    elif r2 in ['e5']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10)]}, {reg[((int(f"0x{s3}", 16) & 0x0f))]}'             # 0x48 == // 1
+    elif r2 in ['da']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10) - 1]}, {reg[((int(f"0x{s3}", 16) & 0x0f) // 0x5)]}'  # 0x49 == // 0x5 : rbx, rdx
+    elif r2 in ['fe']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10)+3]}, {reg[((int(f"0x{s3}", 16) & 0x0f))]}'           # 0x49 == : rdi, r14
     if ins in ['pushq', 'popq'] and not l == 6:
       if self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x48]
       elif self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'popq': r2 = reg[int(f'0x{r2}', 16) - 0x50]
@@ -88,7 +93,10 @@ class Amd64_elf:
       elif not r1 and l == 1: r2 = reg[int(f'0x{r2}', 16) - 0x50]
       elif not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16) - 0x50]
       asm.append(f'{ins} {r2}')
-    elif ins in ['movb', 'movl', 'movq']: asm.append(f'{ins} {r1} {r2}')
+    elif ins in ['movb', 'movl', 'movq']:
+      reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
+      if r1: asm.append(f'{ins} {r1} {r2}')
+      else: asm.append(f'{ins} {r2}')
     elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
     else: asm.append(f'{ins} {r2}')
     self.file_counter += l
@@ -100,10 +108,12 @@ class Amd64_elf:
     self.asm_init, self.asm_end, self.asm_data = p, maxco, f
     while self.file_counter + p < maxco:
       bit16, bit64, cond, chk, byt, sx = False, False, False, False, f[p + self.file_counter:p + self.file_counter + 1], ''
-      if   int.from_bytes(byt) in [0x41, 0x48, 0xff, 0x68, 0xc3, 0x5b, 0x5d, 0x55, 0xe8, 0x50, 0x53]: sx = 'q'
-      elif int.from_bytes(byt) in [0x89, 0xb8, 0xbf, 0x83, 0x8b, 0xc7, 0x0f]: sx = 'l'
-      elif int.from_bytes(byt) in [0x66]: sx = 'w'
+      if   int.from_bytes(byt) in [0x41, 0x48, 0x49, 0xff, 0x68, 0xc3, 0x5b, 0x8b, 0x5d, 0x55, 0xe8, 0x50, 0x53, 0x4d, 0x4c]: sx = 'q'              # Set instruction suffix
+      elif int.from_bytes(byt) in [0x83, 0x89, 0x8b, 0xb8, 0xb9, 0xbb, 0xbf, 0xc7]: sx = 'l'
       elif int.from_bytes(byt) in [0x80, 0xc6]: sx = 'b'
+      elif int.from_bytes(byt) in [0x63]: sx = 'slq'
+      elif int.from_bytes(byt) in [0x0f]: sx = 'zbl'
+      elif int.from_bytes(byt) in [0x66]: sx = 'w'
       if   int.from_bytes(byt) == 0x48: self.file_counter += 1; bit64 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 64bit op
       elif int.from_bytes(byt) == 0x66: self.file_counter += 1; bit16 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 16bit op
       elif int.from_bytes(byt) == 0x49: self.file_counter += 1; cond = True; byt = f[p + self.file_counter:p + self.file_counter + 1]               # Conditional
@@ -167,7 +177,7 @@ class Amd64_elf:
         if   (0xf0 & x) == 0x10 and (0xf0 & y) == 0x40: ins = self.rr(f'nop{sx}', ins, 2)                                                           # Nopl, read 2
         elif (0xf0 & x) == 0x10 and (0xf0 & y) == 0x80: ins = self.rr(f'nop{sx}', ins, 5)                                                           # Nopl, read 5
         elif (0xf0 & x) == 0x10 and (0xf0 & y) == 0x0:  ins = self.rr(f'nop{sx}', ins, 1)                                                           # Nopl, read 1
-        elif (0xf0 & x) == 0xb0: ins = self.rr(f'movzbl{sx}', ins, 3)                                                                               # Mov, read 3
+        elif (0xf0 & x) == 0xb0: ins = self.rr(f'mov{sx}', ins, 3)                                                                                  # Mov, read 3
         elif (0xf0 & x) == 0xa0: ins = self.rr(f'cpuid{sx}', ins, 1)                                                                                # cpuid, read 1
       elif int.from_bytes(byt) == 0x81 and (cond or bit64):
         self.file_counter += 1; x = int.from_bytes(f[p + self.file_counter:p + self.file_counter + 1])
