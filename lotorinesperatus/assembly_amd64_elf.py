@@ -74,27 +74,27 @@ class Amd64_elf:
     return self.data
   def rr(self, ins, asm, l):  # Return register
     reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
-    regg= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '%rbx', 11, 12, '%rdx', '%rdi', '%r14']
-    ereg= ['%eax']
     if ins in ['nop', 'retq', 'cltq', 'int13']: asm.append(f'{ins}'); self.file_counter += l; return asm
     x = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter:self.asm_init + self.file_counter + l]))
     y = hex(int.from_bytes(self.asm_data[self.asm_init + self.file_counter - 2:self.asm_init + self.file_counter + l]))
     r1, r2 = x[4:6], x[2:4]
     s1, s2, s3 = y[4:6], y[2:4], y[6:8]
-    if r2 in ['ec', 'c4']: r2 = f'%rsp'
+    if   r2 in ['ec', 'c4']: r2 = f'%rsp'
+    elif r2 in ['68']: r2 = f'$0x{r1}'; asm.append(f'{ins} {r2}'); self.file_counter += l; return asm
+    elif r2 in ['ff']: r2 = f'$0x{r1}'; asm.append(f'{ins} 0x{x[8:10]}{x[6:8]}(%rip)'); self.file_counter += l; return asm
+    elif r1 in ['c0']: r1,r2 = f'%rax', f'%rax'; asm.append(f'{ins} {r1}, {r2}'); self.file_counter += 1; return asm
     elif r2 in ['e5']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10)]}, {reg[((int(f"0x{s3}", 16) & 0x0f))]}'             # 0x48 == // 1
     elif r2 in ['da']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10) - 1]}, {reg[((int(f"0x{s3}", 16) & 0x0f) // 0x5)]}'  # 0x49 == // 0x5 : rbx, rdx
     elif r2 in ['fe']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10)+3]}, {reg[((int(f"0x{s3}", 16) & 0x0f))]}'           # 0x49 == : rdi, r14
     if ins in ['pushq', 'popq'] and not l == 6:
-      if self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x48]
+      if   self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x48]
       elif self.flags['cond'] and int(f'0x{r2}', 16) < 0x60 and ins == 'popq': r2 = reg[int(f'0x{r2}', 16) - 0x50]
       elif int(f'0x{r2}', 16) < 0x60 and ins == 'popq': r2 = reg[int(f'0x{r2}', 16) - 0x58]
       elif int(f'0x{r2}', 16) < 0x60 and ins == 'pushq': r2 = reg[int(f'0x{r2}', 16) - 0x50]
       elif not r1 and l == 1: r2 = reg[int(f'0x{r2}', 16) - 0x50]
       elif not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16) - 0x50]
-      asm.append(f'{ins} {r2}')
+      asm.append(f'{ins} {r2}' )
     elif ins in ['movb', 'movl', 'movq']:
-      reg = ['%rax', '%rcx', '%rdx', '%rbx', '%rsp', '%rbp', '%rsi', '%rdi', '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15']
       if r1: asm.append(f'{ins} {r1} {r2}')
       else: asm.append(f'{ins} {r2}')
     elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
