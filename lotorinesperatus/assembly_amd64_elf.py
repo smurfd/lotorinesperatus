@@ -81,6 +81,7 @@ class Amd64_elf:
     s1, s2, s3 = y[4:6], y[2:4], y[6:8]
     if   r2 in ['ec', 'c4']: r2 = f'%rsp'
     elif r2 in ['68']: r2 = f'$0x{r1}'; asm.append(f'{ins} {r2}'); self.file_counter += l; return asm
+    elif r2 in ['ff'] and l == 2: r2 = f'%rax'; asm.append(f'{ins} {r2}'); self.file_counter += l; return asm
     elif r2 in ['ff']: r2 = f'$0x{r1}'; asm.append(f'{ins} 0x{x[8:10]}{x[6:8]}(%rip)'); self.file_counter += l; return asm
     elif r1 in ['c0']: r1,r2 = f'%rax', f'%rax'; asm.append(f'{ins} {r1}, {r2}'); self.file_counter += 1; return asm
     elif r2 in ['e5']: r2 = f'{reg[((int(f"0x{s2}", 16) & 0xf0) // 0x10)]}, {reg[((int(f"0x{s3}", 16) & 0x0f))]}'                                   # 0x48 == // 1
@@ -94,8 +95,10 @@ class Amd64_elf:
       elif not r1 and l == 1: r2 = reg[int(f'0x{r2}', 16) - 0x50]
       elif not r1 and int(f'0x{r2}', 16) in range(0x50, 0x5f): r2 = reg[int(f'0x{r2}', 16) - 0x50]
       asm.append(f'{ins} {r2}' )
-    elif ins in ['movb', 'movl', 'movq']:
-      if r1: asm.append(f'{ins} {r1} {r2}')
+    elif ins in ['movb', 'movl', 'movq', 'movslq', 'mov']:
+      if   s1 in ['0f']: asm.append(f'{ins}zbl {r1} {r2}')
+      elif s1 in ['49']: asm.append(f'{ins} %r15d, %rax')
+      elif r1: asm.append(f'{ins} {r1} {r2}')
       else: asm.append(f'{ins} {r2}')
     elif r1: asm.append(f'{ins} $0x{r1}, {r2}')
     else: asm.append(f'{ins} {r2}')
@@ -112,7 +115,6 @@ class Amd64_elf:
       elif int.from_bytes(byt) in [0x83, 0x89, 0x8b, 0xb8, 0xb9, 0xbb, 0xbf, 0xc7]: sx = 'l'
       elif int.from_bytes(byt) in [0x80, 0xc6]: sx = 'b'
       elif int.from_bytes(byt) in [0x63]: sx = 'slq'
-      elif int.from_bytes(byt) in [0x0f]: sx = 'zbl'
       elif int.from_bytes(byt) in [0x66]: sx = 'w'
       if   int.from_bytes(byt) == 0x48: self.file_counter += 1; bit64 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 64bit op
       elif int.from_bytes(byt) == 0x66: self.file_counter += 1; bit16 = True; byt = f[p + self.file_counter:p + self.file_counter + 1]              # 16bit op
